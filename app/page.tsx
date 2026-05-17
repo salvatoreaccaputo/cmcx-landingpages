@@ -2,7 +2,7 @@ import Image from 'next/image';
 import { getLandingPages } from '../lib/supabase';
 import type { LandingPage } from '../lib/supabase';
 
-export const revalidate = 60;
+export const revalidate = 10;
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' });

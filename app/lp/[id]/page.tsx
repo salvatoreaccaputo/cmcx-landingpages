@@ -4,7 +4,7 @@ import { getLandingPage, getLandingPages, parseLandingPage } from '../../../lib/
 import type { LPSection } from '../../../lib/supabase';
 import type { Metadata } from 'next';
 
-export const revalidate = 60;
+export const revalidate = 10;
 
 export async function generateStaticParams() {
   try {
