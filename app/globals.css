@@ -1,0 +1,111 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans:    'Inter', system-ui, sans-serif;
+  --font-display: 'Cal Sans', 'Inter', system-ui, sans-serif;
+
+  --color-bg:       #09090b;
+  --color-surface:  #18181b;
+  --color-border:   rgba(255,255,255,0.08);
+  --color-text:     #fafafa;
+  --color-muted:    #a1a1aa;
+  --color-accent:   #6366f1;
+  --color-accent2:  #8b5cf6;
+  --color-success:  #10b981;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Gradient text ──────────────────────────────────────────── */
+.gradient-text {
+  background: linear-gradient(135deg, #fff 0%, #a78bfa 60%, #6366f1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Glow effects ───────────────────────────────────────────── */
+.glow-accent {
+  box-shadow: 0 0 40px rgba(99,102,241,0.25), 0 0 80px rgba(99,102,241,0.1);
+}
+
+/* ── Card ───────────────────────────────────────────────────── */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.card:hover {
+  border-color: rgba(99,102,241,0.35);
+  transform: translateY(-2px);
+}
+
+/* ── Badge ──────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border: 1px solid rgba(99,102,241,0.3);
+  color: #a78bfa;
+  background: rgba(99,102,241,0.08);
+}
+
+/* ── Prose override for dark bg ─────────────────────────────── */
+.lp-content h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-top: 40px;
+  margin-bottom: 12px;
+}
+.lp-content h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #e4e4e7;
+  margin-top: 28px;
+  margin-bottom: 8px;
+}
+.lp-content p {
+  color: var(--color-muted);
+  font-size: 16px;
+  line-height: 1.8;
+  margin-bottom: 16px;
+}
+.lp-content li {
+  color: var(--color-muted);
+  font-size: 15px;
+  line-height: 1.75;
+  margin-bottom: 6px;
+  padding-left: 8px;
+}
+.lp-content strong {
+  color: var(--color-text);
+  font-weight: 600;
+}
+.lp-content hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 32px 0;
+}
+.lp-content blockquote {
+  border-left: 3px solid var(--color-accent);
+  padding-left: 16px;
+  margin: 24px 0;
+  font-style: italic;
+  color: #c4b5fd;
+}
