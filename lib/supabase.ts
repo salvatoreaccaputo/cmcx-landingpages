@@ -43,9 +43,36 @@ export async function getLandingPage(id: string): Promise<LandingPage | null> {
 
 /* ── Parse structured landing page sections ─────────────────── */
 export interface LPSection {
-  type: 'hero' | 'problem' | 'solution' | 'features' | 'cta' | 'body';
+  type:     'hero' | 'problem' | 'solution' | 'features' | 'cta' | 'body';
   heading?: string;
-  content: string;
+  content:  string;
+  /* Extracted template fields, e.g. "**Headline:** Foo" → fields.Headline = "Foo" */
+  fields:   Record<string, string>;
+}
+
+/**
+ * Extract **Key:** Value template fields — only at the START of a line.
+ * Lines like "1. **Foo:** bar" or "- **Foo:** bar" are NOT matched (list content).
+ * The original raw content is preserved unchanged in section.content.
+ */
+function extractFields(raw: string): Record<string, string> {
+  const fields: Record<string, string> = {};
+  /* Match **Key:** only when it starts a line (optional leading whitespace, NOT after list markers) */
+  const re = /^[ \t]*\*\*([A-Za-z\u00C0-\u024F][^*:\n]{1,40}):\*\*[ \t]+([^\n]+)/gm;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(raw)) !== null) {
+    fields[m[1].trim()] = m[2].trim();
+  }
+  /* Also handle inline template format on a single line: **K1:** V1 **K2:** V2 */
+  if (Object.keys(fields).length === 0) {
+    const inlineRe = /\*\*([A-Za-z\u00C0-\u024F][^*:\n]{1,40}):\*\*\s*([^*\n]+?)(?=\s*\*\*[^*]+?:\*\*|$)/g;
+    while ((m = inlineRe.exec(raw)) !== null) {
+      const key = m[1].trim();
+      const val = m[2].trim();
+      if (val) fields[key] = val;
+    }
+  }
+  return fields;
 }
 
 export function parseLandingPage(raw: string): LPSection[] {
@@ -56,8 +83,11 @@ export function parseLandingPage(raw: string): LPSection[] {
 
   const flush = () => {
     if (currentSection) {
-      currentSection.content = buf.join('\n').trim();
-      if (currentSection.content) sections.push(currentSection);
+      const rawContent = buf.join('\n').trim();
+      /* Keep full original content — extractFields does NOT strip it */
+      currentSection.content = rawContent;
+      currentSection.fields  = extractFields(rawContent);
+      if (rawContent) sections.push(currentSection);
     }
     buf = [];
   };
@@ -65,17 +95,19 @@ export function parseLandingPage(raw: string): LPSection[] {
   for (const line of lines) {
     if (line.startsWith('# ')) {
       flush();
-      currentSection = { type: 'hero', heading: line.slice(2).trim(), content: '' };
+      currentSection = { type: 'hero', heading: line.slice(2).trim(), content: '', fields: {} };
     } else if (line.startsWith('## ')) {
       flush();
-      const heading = line.slice(3).trim().toLowerCase();
+      const h = line.slice(3).trim().toLowerCase();
       const type =
-        heading.includes('problem') || heading.includes('herausforderung') ? 'problem' :
-        heading.includes('lösung') || heading.includes('solution') ? 'solution' :
-        heading.includes('feature') || heading.includes('vorteile') || heading.includes('leistungen') ? 'features' :
-        heading.includes('cta') || heading.includes('jetzt') || heading.includes('kontakt') || heading.includes('start') ? 'cta' :
+        h.includes('problem') || h.includes('herausforderung') || h.includes('challenge') ? 'problem' :
+        h.includes('lösung') || h.includes('solution')                                     ? 'solution' :
+        h.includes('feature') || h.includes('vorteile') || h.includes('leistung')         ? 'features' :
+        h.includes('cta') || h.includes('closing') || h.includes('jetzt') ||
+          h.includes('kontakt') || h.includes('start') || h.includes('call')              ? 'cta'      :
+        h.includes('hero')                                                                  ? 'hero'     :
         'body';
-      currentSection = { type, heading: line.slice(3).trim(), content: '' };
+      currentSection = { type, heading: line.slice(3).trim(), content: '', fields: {} };
     } else {
       buf.push(line);
     }

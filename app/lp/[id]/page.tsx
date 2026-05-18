@@ -37,22 +37,60 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 /* ── Markdown → Rich Nodes ──────────────────────────────────── */
 function parseInline(text: string): string {
-  return text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  /* Handle **Text:** (bold label with trailing colon) and **Text** */
+  return text
+    .replace(/\*\*([^*]+?):\*\*/g, '<strong>$1:</strong>')
+    .replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
 }
 
 function parseBullets(content: string) {
-  return content
-    .split('\n')
-    .filter((l) => l.startsWith('- ') || l.startsWith('* '))
-    .map((l) => l.slice(2).trim());
+  const lines = content.split('\n');
+  const bullets: string[] = [];
+  for (const l of lines) {
+    const trimmed = l.trim();
+    if (!trimmed) continue;
+    /* Markdown bullet: "- foo" or "* foo" */
+    if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+      bullets.push(trimmed.slice(2).trim());
+      continue;
+    }
+    /* Numbered list: "1. foo" or "1. **foo**" */
+    const numMatch = trimmed.match(/^\d+\.\s+(.+)/);
+    if (numMatch) { bullets.push(numMatch[1].trim()); continue; }
+    /* Symbol/emoji bullet: "✦ text", "• text", "◆ text", "→ text" */
+    const symbolMatch = trimmed.match(/^[^\w\s\-*]{1,3}\s+(.+)/u);
+    if (symbolMatch) { bullets.push(symbolMatch[1].trim()); continue; }
+  }
+  return bullets;
 }
 
 function parseProse(content: string) {
   return content
     .split('\n')
-    .filter((l) => l.trim() && !l.startsWith('- ') && !l.startsWith('* ') && !l.startsWith('>'))
+    .map(l => l.trim())
+    .filter(l =>
+      l &&
+      !l.startsWith('- ') &&
+      !l.startsWith('* ') &&
+      !l.startsWith('>') &&
+      !/^\d+\.\s/.test(l) &&
+      /* Filter symbol/emoji bullet lines */
+      !/^[^\w\s\-*]{1,3}\s+/u.test(l) &&
+      /* Filter standalone **Key:** value template lines */
+      !/^\*\*[^*]+:\*\*/.test(l)
+    )
     .join(' ')
     .trim();
+}
+
+/* Strip "HERO", "PROBLEM" etc. from section headings — these are template labels */
+function cleanHeading(h: string | undefined): string | undefined {
+  if (!h) return h;
+  const upper = h.toUpperCase().trim();
+  const LABELS = ['HERO', 'PROBLEM', 'SOLUTION', 'FEATURES', 'CTA', 'PRICING',
+    'SOCIAL PROOF', 'CLOSING CTA', 'OPENING CTA', 'BODY', 'BENEFITS'];
+  if (LABELS.includes(upper)) return undefined;
+  return h;
 }
 
 /* ── Icons ──────────────────────────────────────────────────── */
@@ -70,16 +108,16 @@ const FEATURE_ICONS = [
 ══════════════════════════════════════════════════════════════ */
 
 /* ── HERO ───────────────────────────────────────────────────── */
-function HeroSection({ section, imageUrl, pageId }: { section: LPSection; imageUrl?: string | null; pageId: string }) {
-  const firstLine = parseProse(section.content);
-  const heroImg   = imageUrl || picsum(pageId + 'hero', 900, 600);
+function HeroSection({ section, imageUrl, pageId, pageTitle }: { section: LPSection; imageUrl?: string | null; pageId: string; pageTitle: string }) {
+  const heroImg = imageUrl || picsum(pageId + 'hero', 900, 600);
+
+  /* Prefer extracted fields, fall back to heading/prose */
+  const headline   = section.fields['Headline']    || section.fields['Überschrift'] || section.fields['Title']    || pageTitle;
+  const subline    = section.fields['Subheadline'] || section.fields['Subline']     || section.fields['Subtext']  || section.fields['Unterüberschrift'] || parseProse(section.content);
+  const ctaLabel   = section.fields['Primary CTA'] || section.fields['CTA']         || section.fields['Button']   || 'Jetzt starten';
 
   return (
-    <section
-      className="relative overflow-hidden"
-      style={{ minHeight: '95vh', display: 'flex', alignItems: 'center' }}
-    >
-      {/* Layered background */}
+    <section className="relative overflow-hidden" style={{ minHeight: '95vh', display: 'flex', alignItems: 'center' }}>
       <div className="absolute inset-0">
         <div className="absolute inset-0 grid-bg" style={{ opacity: 0.5 }} />
         <div className="orb orb-purple absolute" style={{ width: 700, height: 700, top: '-20%', left: '-15%', opacity: 0.5 }} />
@@ -96,53 +134,32 @@ function HeroSection({ section, imageUrl, pageId }: { section: LPSection; imageU
               <span className="pulse-dot w-1.5 h-1.5 rounded-full bg-violet-400 inline-block" />
               KI-generiert · CMCx Platform
             </div>
-            <h1
-              className="font-display font-bold leading-none mb-6 gradient-text"
-              style={{ fontSize: 'clamp(2.2rem, 5vw, 4.5rem)', letterSpacing: '-0.03em' }}
-            >
-              {section.heading}
+            <h1 className="font-display font-bold leading-none mb-6 gradient-text"
+              style={{ fontSize: 'clamp(2.2rem, 5vw, 4.5rem)', letterSpacing: '-0.03em' }}>
+              {headline}
             </h1>
             <div style={{ height: 3, width: 100, marginBottom: 28, borderRadius: 99, background: 'linear-gradient(90deg, #7c5cfc, #06c8d9)', boxShadow: '0 0 20px rgba(124,92,252,0.7)' }} />
-            {firstLine && (
+            {subline && (
               <p style={{ fontSize: 'clamp(1rem, 1.5vw, 1.15rem)', lineHeight: 1.75, color: 'var(--color-muted)', marginBottom: 44 }}>
-                {firstLine}
+                {subline}
               </p>
             )}
             <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
               <button className="btn-primary" style={{ fontSize: 15, padding: '15px 32px' }}>
-                Jetzt starten
+                {ctaLabel}
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 3l5 5-5 5M3 8h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </button>
               <button className="btn-outline" style={{ fontSize: 15 }}>Mehr erfahren ↓</button>
             </div>
           </div>
 
-          {/* Right: IMAGE 1 — Hero visual */}
+          {/* Right: IMAGE */}
           <div style={{ position: 'relative' }}>
-            {/* Glow behind image */}
             <div style={{ position: 'absolute', inset: -20, background: 'radial-gradient(ellipse, rgba(124,92,252,0.25), transparent 70%)', borderRadius: 32, pointerEvents: 'none' }} />
-            {/* Floating frame */}
-            <div
-              style={{
-                position: 'relative', borderRadius: 24, overflow: 'hidden',
-                border: '1px solid rgba(124,92,252,0.25)',
-                boxShadow: '0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(124,92,252,0.1)',
-                transform: 'perspective(1000px) rotateY(-4deg) rotateX(2deg)',
-              }}
-            >
-              <Image
-                src={heroImg}
-                alt={section.heading ?? ''}
-                width={720}
-                height={460}
-                className="object-cover w-full"
-                style={{ display: 'block' }}
-                priority
-              />
-              {/* Overlay shimmer */}
+            <div style={{ position: 'relative', borderRadius: 24, overflow: 'hidden', border: '1px solid rgba(124,92,252,0.25)', boxShadow: '0 32px 80px rgba(0,0,0,0.5)', transform: 'perspective(1000px) rotateY(-4deg) rotateX(2deg)' }}>
+              <Image src={heroImg} alt={headline} width={720} height={460} className="object-cover w-full" style={{ display: 'block' }} priority />
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(124,92,252,0.08), transparent 60%)', pointerEvents: 'none' }} />
             </div>
-            {/* Decorative dots */}
             <div style={{ position: 'absolute', bottom: -16, right: -16, width: 80, height: 80, opacity: 0.4 }}>
               <svg viewBox="0 0 80 80" fill="none">
                 {[0,1,2,3].map(r => [0,1,2,3].map(c => (
@@ -153,76 +170,38 @@ function HeroSection({ section, imageUrl, pageId }: { section: LPSection; imageU
           </div>
         </div>
       </div>
-
-      <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
-        style={{ background: 'linear-gradient(to bottom, transparent, var(--color-bg))' }} />
+      <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none" style={{ background: 'linear-gradient(to bottom, transparent, var(--color-bg))' }} />
     </section>
   );
 }
 
 /* ── PROBLEM ────────────────────────────────────────────────── */
 function ProblemSection({ section }: { section: LPSection }) {
-  const bullets = parseBullets(section.content);
-  const prose   = parseProse(section.content);
+  const bullets  = parseBullets(section.content);
+  const prose    = section.fields['Description'] || section.fields['Beschreibung'] || parseProse(section.content);
+  const heading  = cleanHeading(section.heading) || section.fields['Headline'] || 'Die Herausforderung';
 
   return (
     <section style={{ padding: '100px 0', background: 'var(--color-bg)', position: 'relative', overflow: 'hidden' }}>
-      <div className="absolute inset-0 pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse 60% 50% at 20% 50%, rgba(247,37,133,0.06), transparent)' }} />
+      <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 60% 50% at 20% 50%, rgba(247,37,133,0.06), transparent)' }} />
       <div style={{ maxWidth: 1152, margin: '0 auto', padding: '0 24px', width: '100%' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'center' }}>
-
-          {/* Left: text */}
           <div>
-            <div
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '4px 14px', borderRadius: 99,
-                background: 'rgba(247,37,133,0.1)', border: '1px solid rgba(247,37,133,0.25)',
-                color: '#f72585', fontSize: 11, fontWeight: 700,
-                letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 20,
-              }}
-            >
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 14px', borderRadius: 99, background: 'rgba(247,37,133,0.1)', border: '1px solid rgba(247,37,133,0.25)', color: '#f72585', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 20 }}>
               ⚡ Das Problem
             </div>
-            <h2
-              className="font-display font-bold"
-              style={{ fontSize: 'clamp(1.8rem, 3.5vw, 3rem)', letterSpacing: '-0.02em', color: 'var(--color-text)', marginBottom: 20, lineHeight: 1.15 }}
-            >
-              {section.heading}
+            <h2 className="font-display font-bold" style={{ fontSize: 'clamp(1.8rem, 3.5vw, 3rem)', letterSpacing: '-0.02em', color: 'var(--color-text)', marginBottom: 20, lineHeight: 1.15 }}>
+              {heading}
             </h2>
-            {prose && (
-              <p style={{ color: 'var(--color-muted)', fontSize: 17, lineHeight: 1.8, marginBottom: 32 }}>
-                {prose}
-              </p>
-            )}
+            {prose && <p style={{ color: 'var(--color-muted)', fontSize: 17, lineHeight: 1.8, marginBottom: 32 }}>{prose}</p>}
           </div>
-
-          {/* Right: pain points */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {(bullets.length > 0 ? bullets : section.content.split('\n').filter(l => l.trim()).slice(0, 4)).map((b, i) => (
-              <div
-                key={i}
-                style={{
-                  display: 'flex', alignItems: 'flex-start', gap: 16,
-                  padding: '18px 20px', borderRadius: 16,
-                  background: 'rgba(247,37,133,0.05)', border: '1px solid rgba(247,37,133,0.12)',
-                  transition: 'border-color 0.2s, background 0.2s',
-                }}
-              >
-                <div
-                  style={{
-                    width: 28, height: 28, borderRadius: 8, flexShrink: 0,
-                    background: 'rgba(247,37,133,0.12)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path d="M7 3v5M7 10v1" stroke="#f72585" strokeWidth="1.8" strokeLinecap="round"/>
-                  </svg>
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 16, padding: '18px 20px', borderRadius: 16, background: 'rgba(247,37,133,0.05)', border: '1px solid rgba(247,37,133,0.12)' }}>
+                <div style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, background: 'rgba(247,37,133,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 3v5M7 10v1" stroke="#f72585" strokeWidth="1.8" strokeLinecap="round"/></svg>
                 </div>
-                <p style={{ color: '#e4e4e7', fontSize: 15, lineHeight: 1.65 }}
-                   dangerouslySetInnerHTML={{ __html: parseInline(b) }} />
+                <p style={{ color: '#e4e4e7', fontSize: 15, lineHeight: 1.65 }} dangerouslySetInnerHTML={{ __html: parseInline(b) }} />
               </div>
             ))}
           </div>
@@ -235,7 +214,7 @@ function ProblemSection({ section }: { section: LPSection }) {
 /* ── SOLUTION ───────────────────────────────────────────────── */
 function SolutionSection({ section }: { section: LPSection }) {
   const bullets = parseBullets(section.content);
-  const prose   = parseProse(section.content);
+  const prose   = section.fields['Description'] || section.fields['Beschreibung'] || parseProse(section.content);
 
   return (
     <section style={{ padding: '100px 0', position: 'relative', overflow: 'hidden' }}>
@@ -265,7 +244,7 @@ function SolutionSection({ section }: { section: LPSection }) {
             className="font-display font-bold gradient-text-cyan"
             style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)', letterSpacing: '-0.02em', lineHeight: 1.15 }}
           >
-            {section.heading}
+            {cleanHeading(section.heading) || section.fields['Headline'] || 'Die Lösung'}
           </h2>
           {prose && (
             <p style={{ color: 'var(--color-muted)', fontSize: 18, maxWidth: 620, margin: '20px auto 0', lineHeight: 1.75 }}>
@@ -306,7 +285,7 @@ function SolutionSection({ section }: { section: LPSection }) {
 /* ── FEATURES ───────────────────────────────────────────────── */
 function FeaturesSection({ section }: { section: LPSection }) {
   const bullets = parseBullets(section.content);
-  const prose   = parseProse(section.content);
+  const prose   = section.fields['Description'] || section.fields['Beschreibung'] || parseProse(section.content);
   const ACCENT_COLORS = ['#7c5cfc', '#06c8d9', '#a78bfa', '#f72585', '#10b981', '#f59e0b'];
 
   return (
@@ -332,7 +311,7 @@ function FeaturesSection({ section }: { section: LPSection }) {
             className="font-display font-bold gradient-text"
             style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)', letterSpacing: '-0.02em', lineHeight: 1.15 }}
           >
-            {section.heading}
+            {cleanHeading(section.heading) || section.fields['Headline'] || 'Features & Vorteile'}
           </h2>
           {prose && (
             <p style={{ color: 'var(--color-muted)', fontSize: 18, maxWidth: 560, margin: '20px auto 0', lineHeight: 1.75 }}>
@@ -346,9 +325,10 @@ function FeaturesSection({ section }: { section: LPSection }) {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
             {bullets.map((b, i) => {
               const color = ACCENT_COLORS[i % ACCENT_COLORS.length];
-              const parts = b.split(':');
-              const title = parts.length > 1 ? parts[0].replace(/\*\*/g, '') : null;
-              const desc  = parts.length > 1 ? parts.slice(1).join(':').trim() : b;
+              /* Prefer **Bold:** desc format, then fall back to "Title: desc" split */
+              const boldMatch = b.match(/^\*\*(.+?):\*\*\s*([\s\S]*)/);
+              const title = boldMatch ? boldMatch[1].trim() : (b.includes(':') ? b.slice(0, b.indexOf(':')).replace(/\*\*/g, '').trim() : null);
+              const desc  = boldMatch ? boldMatch[2].trim() : (b.includes(':') ? b.slice(b.indexOf(':') + 1).trim() : b);
               return (
                 <div
                   key={i}
@@ -423,52 +403,33 @@ function VisualBreakSection({ imageUrl, pageId, title }: { imageUrl?: string | n
 
 /* ── CTA ────────────────────────────────────────────────────── */
 function CTASection({ section }: { section: LPSection }) {
-  const firstLine = parseProse(section.content);
+  const heading  = cleanHeading(section.heading) || section.fields['Headline'] || section.fields['Überschrift'] || 'Jetzt loslegen';
+  const subtext  = section.fields['Subheadline'] || section.fields['Description'] || section.fields['Subtext'] || parseProse(section.content);
+  const cta1     = section.fields['Primary CTA']   || section.fields['CTA 1'] || section.fields['CTA'] || 'Jetzt starten — kostenlos';
+  const cta2     = section.fields['Secondary CTA'] || section.fields['CTA 2'] || 'Demo ansehen';
 
   return (
     <section style={{ padding: '120px 24px', position: 'relative', overflow: 'hidden', textAlign: 'center' }}>
-      {/* Dramatic background */}
       <div className="absolute inset-0">
         <div className="orb orb-purple absolute" style={{ width: 800, height: 800, top: '-30%', left: '50%', transform: 'translateX(-50%)', opacity: 0.5 }} />
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 80% at 50% 50%, transparent 30%, var(--color-bg) 100%)' }} />
       </div>
-      {/* Glowing top border */}
       <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 300, height: 2, background: 'linear-gradient(90deg, transparent, #7c5cfc, #06c8d9, transparent)', boxShadow: '0 0 20px rgba(124,92,252,0.8)' }} />
-
       <div style={{ position: 'relative', zIndex: 1, maxWidth: 700, margin: '0 auto' }}>
-        <div
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '4px 14px', borderRadius: 99,
-            background: 'rgba(124,92,252,0.1)', border: '1px solid rgba(124,92,252,0.3)',
-            color: '#a78bfa', fontSize: 11, fontWeight: 700,
-            letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 28,
-          }}
-        >
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 14px', borderRadius: 99, background: 'rgba(124,92,252,0.1)', border: '1px solid rgba(124,92,252,0.3)', color: '#a78bfa', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 28 }}>
           <span className="pulse-dot w-1.5 h-1.5 rounded-full bg-violet-400 inline-block" />
           Bereit loszulegen?
         </div>
-        <h2
-          className="font-display font-bold gradient-text"
-          style={{ fontSize: 'clamp(2.5rem, 5vw, 4.5rem)', letterSpacing: '-0.03em', lineHeight: 1.05, marginBottom: 24 }}
-        >
-          {section.heading}
+        <h2 className="font-display font-bold gradient-text" style={{ fontSize: 'clamp(2.5rem, 5vw, 4.5rem)', letterSpacing: '-0.03em', lineHeight: 1.05, marginBottom: 24 }}>
+          {heading}
         </h2>
-        {firstLine && (
-          <p style={{ color: 'var(--color-muted)', fontSize: 18, lineHeight: 1.75, marginBottom: 48 }}>
-            {firstLine}
-          </p>
-        )}
+        {subtext && <p style={{ color: 'var(--color-muted)', fontSize: 18, lineHeight: 1.75, marginBottom: 48 }}>{subtext}</p>}
         <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
           <button className="btn-primary" style={{ fontSize: 17, padding: '18px 44px', borderRadius: 16 }}>
-            Jetzt starten — kostenlos
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <path d="M9 3l6 6-6 6M3 9h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+            {cta1}
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 3l6 6-6 6M3 9h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </button>
-          <button className="btn-outline" style={{ fontSize: 17 }}>
-            Demo ansehen
-          </button>
+          <button className="btn-outline" style={{ fontSize: 17 }}>{cta2}</button>
         </div>
       </div>
     </section>
@@ -476,26 +437,33 @@ function CTASection({ section }: { section: LPSection }) {
 }
 
 /* ── BODY (generic) ─────────────────────────────────────────── */
+const SECTION_LABEL_MAP: Record<string, string> = {
+  'SOCIAL PROOF': 'Das sagen unsere Kunden',
+  'PRICING':      'Preise & Pakete',
+  'TESTIMONIALS': 'Kundenstimmen',
+  'BENEFITS':     'Ihre Vorteile',
+};
+
 function BodySection({ section }: { section: LPSection }) {
   const bullets = parseBullets(section.content);
-  const prose   = parseProse(section.content);
+  const prose   = section.fields['Description'] || section.fields['Beschreibung'] || parseProse(section.content);
+  const raw     = section.heading ?? '';
+  const heading = cleanHeading(raw) || SECTION_LABEL_MAP[raw.toUpperCase().trim()] || section.fields['Headline'] || null;
 
   return (
     <section style={{ padding: '80px 0', position: 'relative' }}>
       <div style={{ maxWidth: 1152, margin: '0 auto', padding: '0 24px', width: '100%' }}>
         <div style={{ display: 'grid', gridTemplateColumns: bullets.length > 0 ? '1fr 1fr' : '1fr', gap: 60, alignItems: 'start' }}>
           <div>
-            {section.heading && (
+            {heading && (
               <h2
                 className="font-display font-bold"
                 style={{ fontSize: 'clamp(1.5rem, 3vw, 2.5rem)', letterSpacing: '-0.02em', color: 'var(--color-text)', marginBottom: 20, lineHeight: 1.2 }}
               >
-                {section.heading}
+                {heading}
               </h2>
             )}
-            {prose && (
-              <p style={{ color: 'var(--color-muted)', fontSize: 16, lineHeight: 1.85 }}>{prose}</p>
-            )}
+            {prose && <p style={{ color: 'var(--color-muted)', fontSize: 16, lineHeight: 1.85 }}>{prose}</p>}
           </div>
           {bullets.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -550,7 +518,7 @@ export default async function LPPage({ params }: { params: Promise<{ id: string 
             );
           }
           switch (section.type) {
-            case 'hero':     withBreak.push(<HeroSection     key={i} section={section} imageUrl={lp.image_url} pageId={lp.id} />); break;
+            case 'hero':     withBreak.push(<HeroSection     key={i} section={section} imageUrl={lp.image_url} pageId={lp.id} pageTitle={lp.title} />); break;
             case 'problem':  withBreak.push(<ProblemSection  key={i} section={section} />); break;
             case 'solution': withBreak.push(<SolutionSection key={i} section={section} />); break;
             case 'features': withBreak.push(<FeaturesSection key={i} section={section} />); break;
@@ -566,12 +534,13 @@ export default async function LPPage({ params }: { params: Promise<{ id: string 
       })() : (
         <>
           <HeroSection
-            section={{ type: 'hero', heading: lp.title, content: lp.idea ?? '' }}
+            section={{ type: 'hero', heading: lp.title, content: lp.idea ?? '', fields: {} }}
             imageUrl={lp.image_url}
             pageId={lp.id}
+            pageTitle={lp.title}
           />
           <VisualBreakSection imageUrl={lp.image_url} pageId={lp.id} title={lp.title} />
-          <BodySection section={{ type: 'body', heading: '', content: lp.landingpage ?? '' }} />
+          <BodySection section={{ type: 'body', heading: '', content: lp.landingpage ?? '', fields: {} }} />
         </>
       )}
 
