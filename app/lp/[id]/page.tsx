@@ -7,8 +7,16 @@ import type { Metadata } from 'next';
 
 /* Deterministischer Seed → immer dasselbe Bild pro Page */
 function picsum(seed: string, w = 1200, h = 600) {
-  const s = seed.replace(/[^a-z0-9]/gi, '').slice(0, 12) || 'cmcx';
+  const clean = seed.replace(/[^a-z0-9]/gi, '') || 'cmcx';
+  /* Für Variation: letzten 12 Chars nehmen (enthält suffix wie 'hero', 'scene') */
+  const s = clean.slice(-12);
   return `https://picsum.photos/seed/${s}/${w}/${h}`;
+}
+
+/** Nur externe URLs (https://...) verwenden — lokale Pfade (/images/...) existieren nicht */
+function resolveImg(url: string | null | undefined, fallbackSeed: string, w = 900, h = 600): string {
+  if (url && url.startsWith('http')) return url;
+  return picsum(fallbackSeed, w, h);
 }
 
 export const revalidate = 10;
@@ -109,7 +117,7 @@ const FEATURE_ICONS = [
 
 /* ── HERO ───────────────────────────────────────────────────── */
 function HeroSection({ section, imageUrl, pageId, pageTitle }: { section: LPSection; imageUrl?: string | null; pageId: string; pageTitle: string }) {
-  const heroImg = imageUrl || picsum(pageId + 'hero', 900, 600);
+  const heroImg = resolveImg(imageUrl, pageId + 'hero', 900, 600);
 
   /* Prefer extracted fields, fall back to heading/prose */
   const headline   = section.fields['Headline']    || section.fields['Überschrift'] || section.fields['Title']    || pageTitle;
@@ -366,21 +374,19 @@ function FeaturesSection({ section }: { section: LPSection }) {
 }
 
 /* ── VISUAL BREAK — IMAGE 2 ─────────────────────────────────── */
-function VisualBreakSection({ imageUrl, pageId, title }: { imageUrl?: string | null; pageId: string; title: string }) {
-  const img2 = imageUrl
-    ? picsum(pageId + 'scene', 1400, 500)   /* zweites Bild immer picsum */
-    : picsum(pageId, 1400, 500);
+function VisualBreakSection({ imageUrl: _imageUrl, pageId, title }: { imageUrl?: string | null; pageId: string; title: string }) {
+  /* Atmosphärisches Hintergrundbild — kleinere Quelle für schnellere Ladezeit */
+  const img2 = picsum(pageId + 'scene', 800, 300);
 
   return (
     <section style={{ padding: '0', position: 'relative', overflow: 'hidden' }}>
       {/* Full-width image with overlay */}
       <div style={{ position: 'relative', width: '100%', height: 480 }}>
-        <Image
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src={img2}
           alt={`${title} — Visual`}
-          fill
-          className="object-cover"
-          style={{ opacity: 0.55 }}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.55 }}
         />
         {/* Gradient overlays */}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, var(--color-bg) 0%, transparent 25%, transparent 75%, var(--color-bg) 100%)' }} />
