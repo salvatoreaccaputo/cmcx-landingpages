@@ -13,9 +13,31 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
+/**
+ * Extract the first `# ` heading from generated LP content.
+ * Falls back to the stored title (derived from user idea).
+ */
+function lpDisplayTitle(lp: LandingPage): string {
+  if (lp.landingpage) {
+    const m = lp.landingpage.match(/^#\s+(.+)/m);
+    if (m?.[1]) {
+      /* Strip any [TAG] prefix that might have slipped through */
+      return m[1].replace(/^\[[A-Z_]+\]\s*/, '').trim();
+    }
+  }
+  return lp.title;
+}
+
 function excerpt(text: string | null, max = 130) {
   if (!text) return '';
-  const clean = text.replace(/#{1,6}\s/g, '').replace(/\*\*/g, '').replace(/\*/g, '');
+  const clean = text
+    .replace(/^#.*$/gm, '')          /* Remove heading lines */
+    .replace(/^\[.*?\]\s*/gm, '')    /* Remove [TAG] markers */
+    .replace(/^(CTA|Button|Primary CTA|Subheadline)\s*:.*$/gim, '') /* Remove template instructions */
+    .replace(/#{1,6}\s/g, '')
+    .replace(/\*\*/g, '')
+    .replace(/\*/g, '')
+    .trim();
   return clean.length > max ? clean.slice(0, max).trimEnd() + '…' : clean;
 }
 
@@ -88,7 +110,7 @@ function FeaturedCard({ lp }: { lp: LandingPage }) {
             className="font-display font-bold leading-tight mb-5 gradient-text"
             style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', maxWidth: 680, letterSpacing: '-0.02em' }}
           >
-            {lp.title}
+            {lpDisplayTitle(lp)}
           </h2>
 
           {/* Excerpt */}
@@ -157,7 +179,7 @@ function LPCard({ lp, index }: { lp: LandingPage; index: number }) {
             className="font-display font-semibold leading-snug mb-2"
             style={{ fontSize: '15px', color: 'var(--color-text)', letterSpacing: '-0.01em' }}
           >
-            {lp.title}
+            {lpDisplayTitle(lp)}
           </h3>
           <p
             className="text-[13px] leading-relaxed mb-4"

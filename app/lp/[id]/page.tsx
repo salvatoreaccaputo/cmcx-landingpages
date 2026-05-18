@@ -72,6 +72,9 @@ function parseBullets(content: string) {
   return bullets;
 }
 
+/* Template instruction prefixes that must never appear as visible prose */
+const TEMPLATE_LINE_RE = /^(CTA|Button|Primary CTA|Subheadline|Subline|Headline|Überschrift|Unterüberschrift)\s*:/i;
+
 function parseProse(content: string) {
   return content
     .split('\n')
@@ -85,7 +88,9 @@ function parseProse(content: string) {
       /* Filter symbol/emoji bullet lines */
       !/^[^\w\s\-*]{1,3}\s+/u.test(l) &&
       /* Filter standalone **Key:** value template lines */
-      !/^\*\*[^*]+:\*\*/.test(l)
+      !/^\*\*[^*]+:\*\*/.test(l) &&
+      /* Filter template instruction lines like "CTA: ...", "Button: ..." */
+      !TEMPLATE_LINE_RE.test(l)
     )
     .join(' ')
     .trim();
@@ -119,9 +124,13 @@ const FEATURE_ICONS = [
 function HeroSection({ section, imageUrl, pageId, pageTitle }: { section: LPSection; imageUrl?: string | null; pageId: string; pageTitle: string }) {
   const heroImg = resolveImg(imageUrl, pageId + 'hero', 1200, 600);
 
-  const headline = section.fields['Headline']    || section.fields['Überschrift'] || section.fields['Title']    || pageTitle;
-  const subline  = section.fields['Subheadline'] || section.fields['Subline']     || section.fields['Subtext']  || section.fields['Unterüberschrift'] || parseProse(section.content);
-  const ctaLabel = section.fields['Primary CTA'] || section.fields['CTA']         || section.fields['Button']   || 'Jetzt starten';
+  /* Priority: generated section.heading (new format) → template field → pageTitle */
+  const headline = cleanHeading(section.heading) || section.fields['Headline'] || section.fields['Überschrift'] || section.fields['Title'] || pageTitle;
+  const subline  = section.fields['Subheadline'] || section.fields['Subline']   || section.fields['Subtext']    || section.fields['Unterüberschrift'] || parseProse(section.content);
+  /* Extract "CTA: ..." or "Button: ..." from raw content for the button label */
+  const ctaFromContent = section.content.match(/^(?:Primary\s+)?CTA\s*:\s*(.+)/im)?.[1]?.trim()
+                      || section.content.match(/^Button\s*:\s*(.+)/im)?.[1]?.trim();
+  const ctaLabel = section.fields['Primary CTA'] || section.fields['CTA'] || section.fields['Button'] || ctaFromContent || 'Jetzt starten';
 
   return (
     <section style={{ position: 'relative', overflow: 'hidden', background: 'var(--color-bg)' }}>

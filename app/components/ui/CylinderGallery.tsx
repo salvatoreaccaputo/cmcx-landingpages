@@ -10,6 +10,15 @@ function fallbackImg(id: string) {
   return `https://picsum.photos/seed/${s}/600/400`;
 }
 
+/** Extract first `# ` heading from generated LP content; falls back to stored title */
+function displayTitle(page: LandingPage): string {
+  if (page.landingpage) {
+    const m = page.landingpage.match(/^#\s+(.+)/m);
+    if (m?.[1]) return m[1].replace(/^\[[A-Z_]+\]\s*/, '').trim();
+  }
+  return page.title;
+}
+
 /* ── BandCard ─────────────────────────────────────────────── */
 function BandCard({ page, active, isNewest }: { page: LandingPage; active: boolean; isNewest: boolean }) {
   const [src, setSrc] = useState<string>(page.image_url || fallbackImg(page.id));
@@ -54,7 +63,7 @@ function BandCard({ page, active, isNewest }: { page: LandingPage; active: boole
       )}
 
       <div style={{ position: 'relative', height: 160, overflow: 'hidden', flexShrink: 0 }}>
-        <Image src={src} alt={page.title} fill sizes="280px"
+        <Image src={src} alt={displayTitle(page)} fill sizes="280px"
           style={{ objectFit: 'cover' }}
           onError={() => setSrc(fallbackImg(page.id))} />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top,rgba(6,6,15,0.88) 0%,transparent 55%)' }} />
@@ -70,7 +79,7 @@ function BandCard({ page, active, isNewest }: { page: LandingPage; active: boole
       </div>
       <div style={{ padding: '14px 16px 16px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 10 }}>
         <p style={{ color: '#eeeeff', fontWeight: 700, fontSize: 13, lineHeight: 1.45, fontFamily: 'var(--font-display)', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', margin: 0 }}>
-          {page.title}
+          {displayTitle(page)}
         </p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: isNewest ? '#fbbf24' : active ? '#c4b5fd' : '#7c5cfc', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.2s' }}>
           Lesen
@@ -110,7 +119,7 @@ function GridCard({ page, isNewest }: { page: LandingPage; isNewest: boolean }) 
         </div>
       </div>
       <div style={{ padding: '12px 14px 14px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 8 }}>
-        <p style={{ color: '#eeeeff', fontWeight: 700, fontSize: 12, lineHeight: 1.45, fontFamily: 'var(--font-display)', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', margin: 0 }}>{page.title}</p>
+        <p style={{ color: '#eeeeff', fontWeight: 700, fontSize: 12, lineHeight: 1.45, fontFamily: 'var(--font-display)', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', margin: 0 }}>{displayTitle(page)}</p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: isNewest ? '#fbbf24' : '#7c5cfc', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
           Lesen <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1.5 4.5h6M5 2l2.5 2.5L5 7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </div>
