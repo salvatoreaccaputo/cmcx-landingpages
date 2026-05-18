@@ -117,38 +117,54 @@ const FEATURE_ICONS = [
 
 /* ── HERO ───────────────────────────────────────────────────── */
 function HeroSection({ section, imageUrl, pageId, pageTitle }: { section: LPSection; imageUrl?: string | null; pageId: string; pageTitle: string }) {
-  const heroImg = resolveImg(imageUrl, pageId + 'hero', 900, 600);
+  const heroImg = resolveImg(imageUrl, pageId + 'hero', 1200, 600);
 
-  /* Prefer extracted fields, fall back to heading/prose */
-  const headline   = section.fields['Headline']    || section.fields['Überschrift'] || section.fields['Title']    || pageTitle;
-  const subline    = section.fields['Subheadline'] || section.fields['Subline']     || section.fields['Subtext']  || section.fields['Unterüberschrift'] || parseProse(section.content);
-  const ctaLabel   = section.fields['Primary CTA'] || section.fields['CTA']         || section.fields['Button']   || 'Jetzt starten';
+  const headline = section.fields['Headline']    || section.fields['Überschrift'] || section.fields['Title']    || pageTitle;
+  const subline  = section.fields['Subheadline'] || section.fields['Subline']     || section.fields['Subtext']  || section.fields['Unterüberschrift'] || parseProse(section.content);
+  const ctaLabel = section.fields['Primary CTA'] || section.fields['CTA']         || section.fields['Button']   || 'Jetzt starten';
 
   return (
-    <section className="relative overflow-hidden" style={{ minHeight: '95vh', display: 'flex', alignItems: 'center' }}>
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 grid-bg" style={{ opacity: 0.5 }} />
-        <div className="orb orb-purple absolute" style={{ width: 700, height: 700, top: '-20%', left: '-15%', opacity: 0.5 }} />
-        <div className="orb orb-cyan absolute"   style={{ width: 500, height: 500, bottom: '-10%', right: '-5%', opacity: 0.3 }} />
-        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 80% at 30% 50%, transparent 30%, var(--color-bg) 80%)' }} />
+    <section style={{ position: 'relative', overflow: 'hidden', background: 'var(--color-bg)' }}>
+
+      {/* ── Cinematic Image Banner (top) ── */}
+      <div style={{ position: 'relative', width: '100%', height: 'clamp(320px, 52vh, 580px)', overflow: 'hidden' }}>
+        <Image
+          src={heroImg}
+          alt={headline}
+          fill
+          sizes="100vw"
+          className="object-cover"
+          style={{ objectPosition: 'center 30%' }}
+          priority
+        />
+        {/* Top fade: navbar blends into image */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(7,5,15,0.55) 0%, transparent 40%, transparent 55%, var(--color-bg) 100%)' }} />
+        {/* Subtle purple tint */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(124,92,252,0.12), transparent 60%)', pointerEvents: 'none' }} />
+        {/* Grid overlay */}
+        <div className="absolute inset-0 grid-bg" style={{ opacity: 0.18 }} />
       </div>
 
-      <div style={{ maxWidth: 1152, margin: '0 auto', padding: '100px 24px 80px', width: '100%', position: 'relative', zIndex: 1 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center' }}>
+      {/* ── Text content (below image, no gap) ── */}
+      <div style={{ position: 'relative', zIndex: 1, maxWidth: 1152, margin: '0 auto', padding: '52px 24px 80px', width: '100%' }}>
 
-          {/* Left: text */}
+        {/* Glowing accent line connecting image to text */}
+        <div style={{ width: 80, height: 3, marginBottom: 28, borderRadius: 99, background: 'linear-gradient(90deg, #7c5cfc, #06c8d9)', boxShadow: '0 0 24px rgba(124,92,252,0.8)' }} />
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 40, alignItems: 'flex-end' }}>
           <div>
-            <div className="badge mb-8 inline-flex">
+            <div className="badge mb-6 inline-flex">
               <span className="pulse-dot w-1.5 h-1.5 rounded-full bg-violet-400 inline-block" />
               KI-generiert · CMCx Platform
             </div>
-            <h1 className="font-display font-bold leading-none mb-6 gradient-text"
-              style={{ fontSize: 'clamp(2.2rem, 5vw, 4.5rem)', letterSpacing: '-0.03em' }}>
+            <h1
+              className="font-display font-bold leading-none gradient-text"
+              style={{ fontSize: 'clamp(2.4rem, 5.5vw, 5rem)', letterSpacing: '-0.03em', marginBottom: 24 }}
+            >
               {headline}
             </h1>
-            <div style={{ height: 3, width: 100, marginBottom: 28, borderRadius: 99, background: 'linear-gradient(90deg, #7c5cfc, #06c8d9)', boxShadow: '0 0 20px rgba(124,92,252,0.7)' }} />
             {subline && (
-              <p style={{ fontSize: 'clamp(1rem, 1.5vw, 1.15rem)', lineHeight: 1.75, color: 'var(--color-muted)', marginBottom: 44 }}>
+              <p style={{ fontSize: 'clamp(1rem, 1.5vw, 1.15rem)', lineHeight: 1.75, color: 'var(--color-muted)', maxWidth: 640, marginBottom: 40 }}>
                 {subline}
               </p>
             )}
@@ -161,24 +177,19 @@ function HeroSection({ section, imageUrl, pageId, pageTitle }: { section: LPSect
             </div>
           </div>
 
-          {/* Right: IMAGE */}
-          <div style={{ position: 'relative' }}>
-            <div style={{ position: 'absolute', inset: -20, background: 'radial-gradient(ellipse, rgba(124,92,252,0.25), transparent 70%)', borderRadius: 32, pointerEvents: 'none' }} />
-            <div style={{ position: 'relative', borderRadius: 24, overflow: 'hidden', border: '1px solid rgba(124,92,252,0.25)', boxShadow: '0 32px 80px rgba(0,0,0,0.5)', transform: 'perspective(1000px) rotateY(-4deg) rotateX(2deg)' }}>
-              <Image src={heroImg} alt={headline} width={720} height={460} className="object-cover w-full" style={{ display: 'block' }} priority />
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(124,92,252,0.08), transparent 60%)', pointerEvents: 'none' }} />
-            </div>
-            <div style={{ position: 'absolute', bottom: -16, right: -16, width: 80, height: 80, opacity: 0.4 }}>
-              <svg viewBox="0 0 80 80" fill="none">
-                {[0,1,2,3].map(r => [0,1,2,3].map(c => (
-                  <circle key={`${r}-${c}`} cx={c*20+10} cy={r*20+10} r="2.5" fill="#7c5cfc" />
-                )))}
-              </svg>
-            </div>
+          {/* Corner decoration */}
+          <div style={{ opacity: 0.3, flexShrink: 0, alignSelf: 'flex-start', marginTop: 8 }}>
+            <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
+              {[0,1,2,3].map(r => [0,1,2,3].map(c => (
+                <circle key={`${r}-${c}`} cx={c*18+9} cy={r*18+9} r="2.5" fill="#7c5cfc" />
+              )))}
+            </svg>
           </div>
         </div>
       </div>
-      <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none" style={{ background: 'linear-gradient(to bottom, transparent, var(--color-bg))' }} />
+
+      {/* Bottom ambient glow */}
+      <div className="orb orb-cyan absolute pointer-events-none" style={{ width: 400, height: 400, bottom: '-20%', right: '-5%', opacity: 0.18 }} />
     </section>
   );
 }
