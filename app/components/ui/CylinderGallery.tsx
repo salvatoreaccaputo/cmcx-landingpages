@@ -11,29 +11,57 @@ function fallbackImg(id: string) {
 }
 
 /* ── BandCard ─────────────────────────────────────────────── */
-function BandCard({ page, active }: { page: LandingPage; active: boolean }) {
+function BandCard({ page, active, isNewest }: { page: LandingPage; active: boolean; isNewest: boolean }) {
   const [src, setSrc] = useState<string>(page.image_url || fallbackImg(page.id));
+
+  /* Neuester Artikel: goldener Rahmen + Glow */
+  const newestBorder  = '1.5px solid rgba(251,191,36,0.75)';
+  const newestShadow  = '0 0 28px rgba(251,191,36,0.25), 0 8px 32px rgba(0,0,0,0.4)';
+  const activeBorder  = '1px solid rgba(124,92,252,0.65)';
+  const defaultBorder = '1px solid rgba(124,92,252,0.18)';
+
   return (
     <a
       href={`/lp/${page.id}`}
       style={{
         display: 'flex', flexDirection: 'column', textDecoration: 'none',
         borderRadius: 16, overflow: 'hidden', flexShrink: 0, width: 260,
-        border:     active ? '1px solid rgba(124,92,252,0.65)' : '1px solid rgba(124,92,252,0.18)',
+        border:     isNewest ? newestBorder : active ? activeBorder : defaultBorder,
         background: 'var(--color-surface)',
-        boxShadow:  active
-          ? '0 0 36px rgba(124,92,252,0.32), 0 14px 44px rgba(0,0,0,0.5)'
-          : '0 4px 20px rgba(0,0,0,0.25)',
+        boxShadow:  isNewest
+          ? newestShadow
+          : active
+            ? '0 0 36px rgba(124,92,252,0.32), 0 14px 44px rgba(0,0,0,0.5)'
+            : '0 4px 20px rgba(0,0,0,0.25)',
         transform:   active ? 'scale(1.06)' : 'scale(1)',
         transition:  'transform 0.4s cubic-bezier(.4,0,.2,1), box-shadow 0.4s, border-color 0.4s',
         cursor: 'pointer',
+        position: 'relative',
       }}
     >
+      {/* NEU-Badge oben rechts */}
+      {isNewest && (
+        <div style={{
+          position: 'absolute', top: 10, right: 10, zIndex: 10,
+          padding: '3px 8px', borderRadius: 99,
+          background: 'linear-gradient(135deg, #f59e0b, #fbbf24)',
+          color: '#1a0a00', fontSize: 9, fontWeight: 900,
+          letterSpacing: '0.1em', textTransform: 'uppercase',
+          boxShadow: '0 2px 8px rgba(251,191,36,0.5)',
+        }}>
+          ✦ Neu
+        </div>
+      )}
+
       <div style={{ position: 'relative', height: 160, overflow: 'hidden', flexShrink: 0 }}>
         <Image src={src} alt={page.title} fill sizes="280px"
           style={{ objectFit: 'cover' }}
           onError={() => setSrc(fallbackImg(page.id))} />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top,rgba(6,6,15,0.88) 0%,transparent 55%)' }} />
+        {/* Goldener Schimmer für neuestem Artikel */}
+        {isNewest && (
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(251,191,36,0.08), transparent 60%)', pointerEvents: 'none' }} />
+        )}
         <div style={{ position: 'absolute', top: 10, left: 12 }}>
           <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '2px 7px', borderRadius: 99, background: 'rgba(124,92,252,0.22)', border: '1px solid rgba(124,92,252,0.35)', color: '#a78bfa' }}>
             {page.tone}
@@ -44,7 +72,7 @@ function BandCard({ page, active }: { page: LandingPage; active: boolean }) {
         <p style={{ color: '#eeeeff', fontWeight: 700, fontSize: 13, lineHeight: 1.45, fontFamily: 'var(--font-display)', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', margin: 0 }}>
           {page.title}
         </p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: active ? '#c4b5fd' : '#7c5cfc', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.2s' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: isNewest ? '#fbbf24' : active ? '#c4b5fd' : '#7c5cfc', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.2s' }}>
           Lesen
           <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1.5 4.5h6M5 2l2.5 2.5L5 7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </div>
@@ -54,23 +82,36 @@ function BandCard({ page, active }: { page: LandingPage; active: boolean }) {
 }
 
 /* ── GridCard ─────────────────────────────────────────────── */
-function GridCard({ page }: { page: LandingPage }) {
+function GridCard({ page, isNewest }: { page: LandingPage; isNewest: boolean }) {
   const [src, setSrc] = useState<string>(page.image_url || fallbackImg(page.id));
   return (
     <a href={`/lp/${page.id}`}
-      style={{ display: 'flex', flexDirection: 'column', textDecoration: 'none', borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(124,92,252,0.18)', background: 'var(--color-surface)', transition: 'transform 0.22s, border-color 0.22s, box-shadow 0.22s' }}
-      onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-5px) scale(1.02)'; el.style.borderColor = 'rgba(124,92,252,0.5)'; el.style.boxShadow = '0 20px 56px rgba(124,92,252,0.22)'; }}
-      onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = ''; el.style.borderColor = 'rgba(124,92,252,0.18)'; el.style.boxShadow = ''; }}>
+      style={{
+        display: 'flex', flexDirection: 'column', textDecoration: 'none', position: 'relative',
+        borderRadius: 14, overflow: 'hidden',
+        border: isNewest ? '1.5px solid rgba(251,191,36,0.75)' : '1px solid rgba(124,92,252,0.18)',
+        background: 'var(--color-surface)',
+        boxShadow: isNewest ? '0 0 24px rgba(251,191,36,0.2)' : 'none',
+        transition: 'transform 0.22s, border-color 0.22s, box-shadow 0.22s',
+      }}
+      onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-5px) scale(1.02)'; if (!isNewest) { el.style.borderColor = 'rgba(124,92,252,0.5)'; el.style.boxShadow = '0 20px 56px rgba(124,92,252,0.22)'; } }}
+      onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = ''; if (!isNewest) { el.style.borderColor = 'rgba(124,92,252,0.18)'; el.style.boxShadow = ''; } }}>
+      {isNewest && (
+        <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 10, padding: '3px 8px', borderRadius: 99, background: 'linear-gradient(135deg, #f59e0b, #fbbf24)', color: '#1a0a00', fontSize: 9, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase', boxShadow: '0 2px 8px rgba(251,191,36,0.5)' }}>
+          ✦ Neu
+        </div>
+      )}
       <div style={{ position: 'relative', height: 140, overflow: 'hidden', flexShrink: 0 }}>
         <Image src={src} alt={page.title} fill sizes="(max-width:1440px) 16vw, 220px" style={{ objectFit: 'cover' }} onError={() => setSrc(fallbackImg(page.id))} />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top,rgba(6,6,15,0.85) 0%,transparent 55%)' }} />
+        {isNewest && <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg,rgba(251,191,36,0.07),transparent 60%)', pointerEvents: 'none' }} />}
         <div style={{ position: 'absolute', top: 8, left: 10 }}>
           <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '2px 7px', borderRadius: 99, background: 'rgba(124,92,252,0.22)', border: '1px solid rgba(124,92,252,0.35)', color: '#a78bfa' }}>{page.tone}</span>
         </div>
       </div>
       <div style={{ padding: '12px 14px 14px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 8 }}>
         <p style={{ color: '#eeeeff', fontWeight: 700, fontSize: 12, lineHeight: 1.45, fontFamily: 'var(--font-display)', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', margin: 0 }}>{page.title}</p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#7c5cfc', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: isNewest ? '#fbbf24' : '#7c5cfc', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
           Lesen <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1.5 4.5h6M5 2l2.5 2.5L5 7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </div>
       </div>
@@ -213,7 +254,7 @@ export default function CylinderGallery({ pages }: Props) {
       {/* ── Grid ──────────────────────────────────────────────── */}
       {showGrid && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', gap: 16 }}>
-          {pages.map(p => <GridCard key={p.id} page={p} />)}
+          {pages.map((p, i) => <GridCard key={p.id} page={p} isNewest={i === 0} />)}
         </div>
       )}
 
@@ -232,7 +273,7 @@ export default function CylinderGallery({ pages }: Props) {
               {doubled.map((page, i) => (
                 <div key={`${page.id}-${i}`} ref={el => { cardRefs.current[i] = el; }}
                   style={{ willChange: 'transform', transformOrigin: 'center bottom' }}>
-                  <BandCard page={page} active={(i % N) === activeIdx} />
+                  <BandCard page={page} active={(i % N) === activeIdx} isNewest={(i % N) === 0} />
                 </div>
               ))}
             </div>
