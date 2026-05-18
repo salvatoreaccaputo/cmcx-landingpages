@@ -1,8 +1,15 @@
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
+import React from 'react';
 import { getLandingPage, getLandingPages, parseLandingPage } from '../../../lib/supabase';
 import type { LPSection } from '../../../lib/supabase';
 import type { Metadata } from 'next';
+
+/* Deterministischer Seed → immer dasselbe Bild pro Page */
+function picsum(seed: string, w = 1200, h = 600) {
+  const s = seed.replace(/[^a-z0-9]/gi, '').slice(0, 12) || 'cmcx';
+  return `https://picsum.photos/seed/${s}/${w}/${h}`;
+}
 
 export const revalidate = 10;
 
@@ -28,119 +35,265 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   };
 }
 
-/* ── Section renderers ─────────────────────────────────────── */
-function renderLine(line: string, key: number) {
-  if (!line.trim()) return <div key={key} style={{ height: 8 }} />;
-
-  if (line.startsWith('- ') || line.startsWith('* ')) {
-    return (
-      <div key={key} className="flex items-start gap-3 mb-3">
-        <div className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-2" style={{ background: 'var(--color-accent)' }} />
-        <span className="lp-content" style={{ color: 'var(--color-muted)', fontSize: 15, lineHeight: 1.75 }}>
-          {line.slice(2).replace(/\*\*(.+?)\*\*/g, (_, t) => t)}
-        </span>
-      </div>
-    );
-  }
-  if (line.startsWith('> ')) {
-    return (
-      <blockquote key={key} className="lp-content" style={{ borderLeft: '3px solid var(--color-accent)', paddingLeft: 16, margin: '20px 0', fontStyle: 'italic', color: '#c4b5fd' }}>
-        {line.slice(2)}
-      </blockquote>
-    );
-  }
-  if (line.startsWith('**') && line.endsWith('**')) {
-    return <p key={key} className="font-semibold mb-2" style={{ color: 'var(--color-text)', fontSize: 16 }}>{line.slice(2, -2)}</p>;
-  }
-  return (
-    <p key={key} style={{ color: 'var(--color-muted)', fontSize: 15, lineHeight: 1.8, marginBottom: 8 }}>
-      {line.replace(/\*\*(.+?)\*\*/g, (_, t) => t)}
-    </p>
-  );
+/* ── Markdown → Rich Nodes ──────────────────────────────────── */
+function parseInline(text: string): string {
+  return text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
 }
 
-function HeroSection({ section }: { section: LPSection }) {
+function parseBullets(content: string) {
+  return content
+    .split('\n')
+    .filter((l) => l.startsWith('- ') || l.startsWith('* '))
+    .map((l) => l.slice(2).trim());
+}
+
+function parseProse(content: string) {
+  return content
+    .split('\n')
+    .filter((l) => l.trim() && !l.startsWith('- ') && !l.startsWith('* ') && !l.startsWith('>'))
+    .join(' ')
+    .trim();
+}
+
+/* ── Icons ──────────────────────────────────────────────────── */
+const FEATURE_ICONS = [
+  <svg key={0} width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 2l2.5 5.5H19l-4.5 3.5 1.7 5.5L11 13.5 5.8 16.5l1.7-5.5L3 7.5h5.5L11 2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/></svg>,
+  <svg key={1} width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="4" stroke="currentColor" strokeWidth="1.5"/><path d="M11 1v3M11 18v3M1 11h3M18 11h3M4.22 4.22l2.12 2.12M15.66 15.66l2.12 2.12M4.22 17.78l2.12-2.12M15.66 6.34l2.12-2.12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
+  <svg key={2} width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="2" y="2" width="8" height="8" rx="2" stroke="currentColor" strokeWidth="1.5"/><rect x="12" y="2" width="8" height="8" rx="2" stroke="currentColor" strokeWidth="1.5"/><rect x="2" y="12" width="8" height="8" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M16 12v8M12 16h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
+  <svg key={3} width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 3l8 4.5v7L11 19l-8-4.5v-7L11 3z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M11 3v16M3 7.5l8 4.5 8-4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
+  <svg key={4} width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 4v5l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="1.5"/></svg>,
+  <svg key={5} width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M4 11l5 5L18 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+];
+
+/* ══════════════════════════════════════════════════════════════
+   SECTION COMPONENTS
+══════════════════════════════════════════════════════════════ */
+
+/* ── HERO ───────────────────────────────────────────────────── */
+function HeroSection({ section, imageUrl, pageId }: { section: LPSection; imageUrl?: string | null; pageId: string }) {
+  const firstLine = parseProse(section.content);
+  const heroImg   = imageUrl || picsum(pageId + 'hero', 900, 600);
+
   return (
-    <section className="relative min-h-[70vh] flex items-center overflow-hidden">
-      {/* Gradient bg */}
-      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 30% 50%, rgba(99,102,241,0.15), transparent 60%), radial-gradient(ellipse at 70% 50%, rgba(139,92,246,0.1), transparent 60%)' }} />
-      <div className="relative max-w-4xl mx-auto px-6 py-24 text-center w-full">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-widest mb-8"
-          style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', color: '#a78bfa' }}>
-          <div className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-          KI-generierte Landing Page
-        </div>
-        <h1 className="text-[52px] sm:text-[64px] font-bold leading-[1.1] mb-6 gradient-text">
-          {section.heading}
-        </h1>
-        {section.content && (
-          <p className="text-[18px] leading-relaxed max-w-2xl mx-auto" style={{ color: 'var(--color-muted)' }}>
-            {section.content.split('\n').find(l => l.trim()) ?? ''}
-          </p>
-        )}
+    <section
+      className="relative overflow-hidden"
+      style={{ minHeight: '95vh', display: 'flex', alignItems: 'center' }}
+    >
+      {/* Layered background */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 grid-bg" style={{ opacity: 0.5 }} />
+        <div className="orb orb-purple absolute" style={{ width: 700, height: 700, top: '-20%', left: '-15%', opacity: 0.5 }} />
+        <div className="orb orb-cyan absolute"   style={{ width: 500, height: 500, bottom: '-10%', right: '-5%', opacity: 0.3 }} />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 80% at 30% 50%, transparent 30%, var(--color-bg) 80%)' }} />
       </div>
+
+      <div style={{ maxWidth: 1152, margin: '0 auto', padding: '100px 24px 80px', width: '100%', position: 'relative', zIndex: 1 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center' }}>
+
+          {/* Left: text */}
+          <div>
+            <div className="badge mb-8 inline-flex">
+              <span className="pulse-dot w-1.5 h-1.5 rounded-full bg-violet-400 inline-block" />
+              KI-generiert · CMCx Platform
+            </div>
+            <h1
+              className="font-display font-bold leading-none mb-6 gradient-text"
+              style={{ fontSize: 'clamp(2.2rem, 5vw, 4.5rem)', letterSpacing: '-0.03em' }}
+            >
+              {section.heading}
+            </h1>
+            <div style={{ height: 3, width: 100, marginBottom: 28, borderRadius: 99, background: 'linear-gradient(90deg, #7c5cfc, #06c8d9)', boxShadow: '0 0 20px rgba(124,92,252,0.7)' }} />
+            {firstLine && (
+              <p style={{ fontSize: 'clamp(1rem, 1.5vw, 1.15rem)', lineHeight: 1.75, color: 'var(--color-muted)', marginBottom: 44 }}>
+                {firstLine}
+              </p>
+            )}
+            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+              <button className="btn-primary" style={{ fontSize: 15, padding: '15px 32px' }}>
+                Jetzt starten
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 3l5 5-5 5M3 8h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+              <button className="btn-outline" style={{ fontSize: 15 }}>Mehr erfahren ↓</button>
+            </div>
+          </div>
+
+          {/* Right: IMAGE 1 — Hero visual */}
+          <div style={{ position: 'relative' }}>
+            {/* Glow behind image */}
+            <div style={{ position: 'absolute', inset: -20, background: 'radial-gradient(ellipse, rgba(124,92,252,0.25), transparent 70%)', borderRadius: 32, pointerEvents: 'none' }} />
+            {/* Floating frame */}
+            <div
+              style={{
+                position: 'relative', borderRadius: 24, overflow: 'hidden',
+                border: '1px solid rgba(124,92,252,0.25)',
+                boxShadow: '0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(124,92,252,0.1)',
+                transform: 'perspective(1000px) rotateY(-4deg) rotateX(2deg)',
+              }}
+            >
+              <Image
+                src={heroImg}
+                alt={section.heading ?? ''}
+                width={720}
+                height={460}
+                className="object-cover w-full"
+                style={{ display: 'block' }}
+                priority
+              />
+              {/* Overlay shimmer */}
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(124,92,252,0.08), transparent 60%)', pointerEvents: 'none' }} />
+            </div>
+            {/* Decorative dots */}
+            <div style={{ position: 'absolute', bottom: -16, right: -16, width: 80, height: 80, opacity: 0.4 }}>
+              <svg viewBox="0 0 80 80" fill="none">
+                {[0,1,2,3].map(r => [0,1,2,3].map(c => (
+                  <circle key={`${r}-${c}`} cx={c*20+10} cy={r*20+10} r="2.5" fill="#7c5cfc" />
+                )))}
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
+        style={{ background: 'linear-gradient(to bottom, transparent, var(--color-bg))' }} />
     </section>
   );
 }
 
+/* ── PROBLEM ────────────────────────────────────────────────── */
 function ProblemSection({ section }: { section: LPSection }) {
-  return (
-    <section className="py-20 px-6">
-      <div className="max-w-3xl mx-auto">
-        <div className="mb-3 text-[11px] font-bold uppercase tracking-widest" style={{ color: '#f87171' }}>Problem</div>
-        <h2 className="text-[32px] font-bold leading-tight mb-8" style={{ color: 'var(--color-text)' }}>
-          {section.heading}
-        </h2>
-        <div className="lp-content">
-          {section.content.split('\n').map((l, i) => renderLine(l, i))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function SolutionSection({ section }: { section: LPSection }) {
-  return (
-    <section className="py-20 px-6" style={{ background: 'rgba(99,102,241,0.04)', borderTop: '1px solid var(--color-border)', borderBottom: '1px solid var(--color-border)' }}>
-      <div className="max-w-3xl mx-auto">
-        <div className="mb-3 text-[11px] font-bold uppercase tracking-widest" style={{ color: '#34d399' }}>Lösung</div>
-        <h2 className="text-[32px] font-bold leading-tight mb-8" style={{ color: 'var(--color-text)' }}>
-          {section.heading}
-        </h2>
-        <div className="lp-content">
-          {section.content.split('\n').map((l, i) => renderLine(l, i))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function FeaturesSection({ section }: { section: LPSection }) {
-  const lines = section.content.split('\n').filter(l => l.trim());
-  const bullets = lines.filter(l => l.startsWith('- ') || l.startsWith('* '));
-  const prose   = lines.filter(l => !l.startsWith('- ') && !l.startsWith('* '));
+  const bullets = parseBullets(section.content);
+  const prose   = parseProse(section.content);
 
   return (
-    <section className="py-20 px-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-3 text-[11px] font-bold uppercase tracking-widest" style={{ color: '#a78bfa' }}>Vorteile</div>
-        <h2 className="text-[32px] font-bold leading-tight mb-4" style={{ color: 'var(--color-text)' }}>
-          {section.heading}
-        </h2>
-        {prose.map((l, i) => <p key={i} className="text-[16px] mb-8" style={{ color: 'var(--color-muted)' }}>{l}</p>)}
+    <section style={{ padding: '100px 0', background: 'var(--color-bg)', position: 'relative', overflow: 'hidden' }}>
+      <div className="absolute inset-0 pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse 60% 50% at 20% 50%, rgba(247,37,133,0.06), transparent)' }} />
+      <div style={{ maxWidth: 1152, margin: '0 auto', padding: '0 24px', width: '100%' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'center' }}>
 
-        {bullets.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {bullets.map((line, i) => (
-              <div key={i} className="rounded-xl p-5 flex items-start gap-4"
-                style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)' }}>
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 font-bold text-[13px]"
-                  style={{ background: 'rgba(99,102,241,0.15)', color: '#a78bfa' }}>
-                  {i + 1}
+          {/* Left: text */}
+          <div>
+            <div
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '4px 14px', borderRadius: 99,
+                background: 'rgba(247,37,133,0.1)', border: '1px solid rgba(247,37,133,0.25)',
+                color: '#f72585', fontSize: 11, fontWeight: 700,
+                letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 20,
+              }}
+            >
+              ⚡ Das Problem
+            </div>
+            <h2
+              className="font-display font-bold"
+              style={{ fontSize: 'clamp(1.8rem, 3.5vw, 3rem)', letterSpacing: '-0.02em', color: 'var(--color-text)', marginBottom: 20, lineHeight: 1.15 }}
+            >
+              {section.heading}
+            </h2>
+            {prose && (
+              <p style={{ color: 'var(--color-muted)', fontSize: 17, lineHeight: 1.8, marginBottom: 32 }}>
+                {prose}
+              </p>
+            )}
+          </div>
+
+          {/* Right: pain points */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {(bullets.length > 0 ? bullets : section.content.split('\n').filter(l => l.trim()).slice(0, 4)).map((b, i) => (
+              <div
+                key={i}
+                style={{
+                  display: 'flex', alignItems: 'flex-start', gap: 16,
+                  padding: '18px 20px', borderRadius: 16,
+                  background: 'rgba(247,37,133,0.05)', border: '1px solid rgba(247,37,133,0.12)',
+                  transition: 'border-color 0.2s, background 0.2s',
+                }}
+              >
+                <div
+                  style={{
+                    width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+                    background: 'rgba(247,37,133,0.12)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M7 3v5M7 10v1" stroke="#f72585" strokeWidth="1.8" strokeLinecap="round"/>
+                  </svg>
                 </div>
-                <p className="text-[14px] leading-relaxed" style={{ color: 'var(--color-muted)' }}>
-                  {line.slice(2).replace(/\*\*(.+?)\*\*/g, (_, t) => t)}
-                </p>
+                <p style={{ color: '#e4e4e7', fontSize: 15, lineHeight: 1.65 }}
+                   dangerouslySetInnerHTML={{ __html: parseInline(b) }} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ── SOLUTION ───────────────────────────────────────────────── */
+function SolutionSection({ section }: { section: LPSection }) {
+  const bullets = parseBullets(section.content);
+  const prose   = parseProse(section.content);
+
+  return (
+    <section style={{ padding: '100px 0', position: 'relative', overflow: 'hidden' }}>
+      {/* Gradient bg */}
+      <div className="absolute inset-0" style={{
+        background: 'linear-gradient(135deg, rgba(124,92,252,0.07) 0%, rgba(6,200,217,0.04) 100%)',
+        borderTop: '1px solid rgba(124,92,252,0.1)', borderBottom: '1px solid rgba(124,92,252,0.1)',
+      }} />
+      <div className="absolute inset-0 pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse 60% 50% at 80% 50%, rgba(6,200,217,0.08), transparent)' }} />
+
+      <div style={{ maxWidth: 1152, margin: '0 auto', padding: '0 24px', width: '100%', position: 'relative', zIndex: 1 }}>
+        {/* Top label */}
+        <div style={{ textAlign: 'center', marginBottom: 60 }}>
+          <div
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '4px 14px', borderRadius: 99,
+              background: 'rgba(6,200,217,0.1)', border: '1px solid rgba(6,200,217,0.25)',
+              color: '#06c8d9', fontSize: 11, fontWeight: 700,
+              letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 20,
+            }}
+          >
+            ✦ Die Lösung
+          </div>
+          <h2
+            className="font-display font-bold gradient-text-cyan"
+            style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)', letterSpacing: '-0.02em', lineHeight: 1.15 }}
+          >
+            {section.heading}
+          </h2>
+          {prose && (
+            <p style={{ color: 'var(--color-muted)', fontSize: 18, maxWidth: 620, margin: '20px auto 0', lineHeight: 1.75 }}>
+              {prose}
+            </p>
+          )}
+        </div>
+
+        {/* Solution items */}
+        {bullets.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20 }}>
+            {bullets.map((b, i) => (
+              <div
+                key={i}
+                className="card-glass"
+                style={{ padding: '28px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}
+              >
+                <div style={{
+                  width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+                  background: 'linear-gradient(135deg, rgba(124,92,252,0.2), rgba(6,200,217,0.15))',
+                  border: '1px solid rgba(124,92,252,0.2)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#a78bfa',
+                }}>
+                  {FEATURE_ICONS[i % FEATURE_ICONS.length]}
+                </div>
+                <p style={{ color: '#e4e4e7', fontSize: 15, lineHeight: 1.7 }}
+                   dangerouslySetInnerHTML={{ __html: parseInline(b) }} />
               </div>
             ))}
           </div>
@@ -150,29 +303,171 @@ function FeaturesSection({ section }: { section: LPSection }) {
   );
 }
 
-function CTASection({ section }: { section: LPSection }) {
+/* ── FEATURES ───────────────────────────────────────────────── */
+function FeaturesSection({ section }: { section: LPSection }) {
+  const bullets = parseBullets(section.content);
+  const prose   = parseProse(section.content);
+  const ACCENT_COLORS = ['#7c5cfc', '#06c8d9', '#a78bfa', '#f72585', '#10b981', '#f59e0b'];
+
   return (
-    <section className="py-24 px-6 relative overflow-hidden">
-      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, rgba(99,102,241,0.12), transparent 70%)' }} />
-      <div className="relative max-w-2xl mx-auto text-center">
-        <h2 className="text-[36px] font-bold leading-tight mb-4 gradient-text">
+    <section style={{ padding: '100px 0', background: 'var(--color-bg)', position: 'relative', overflow: 'hidden' }}>
+      <div className="absolute inset-0 pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(124,92,252,0.07), transparent)' }} />
+
+      <div style={{ maxWidth: 1152, margin: '0 auto', padding: '0 24px', width: '100%', position: 'relative', zIndex: 1 }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: 64 }}>
+          <div
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '4px 14px', borderRadius: 99,
+              background: 'rgba(124,92,252,0.1)', border: '1px solid rgba(124,92,252,0.25)',
+              color: '#a78bfa', fontSize: 11, fontWeight: 700,
+              letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 20,
+            }}
+          >
+            ◆ Features & Vorteile
+          </div>
+          <h2
+            className="font-display font-bold gradient-text"
+            style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)', letterSpacing: '-0.02em', lineHeight: 1.15 }}
+          >
+            {section.heading}
+          </h2>
+          {prose && (
+            <p style={{ color: 'var(--color-muted)', fontSize: 18, maxWidth: 560, margin: '20px auto 0', lineHeight: 1.75 }}>
+              {prose}
+            </p>
+          )}
+        </div>
+
+        {/* Feature cards */}
+        {bullets.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
+            {bullets.map((b, i) => {
+              const color = ACCENT_COLORS[i % ACCENT_COLORS.length];
+              const parts = b.split(':');
+              const title = parts.length > 1 ? parts[0].replace(/\*\*/g, '') : null;
+              const desc  = parts.length > 1 ? parts.slice(1).join(':').trim() : b;
+              return (
+                <div
+                  key={i}
+                  className="card"
+                  style={{ padding: '32px 28px', position: 'relative', overflow: 'hidden' }}
+                >
+                  {/* Top accent bar */}
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${color}, transparent)`, borderRadius: '20px 20px 0 0' }} />
+                  {/* Corner glow */}
+                  <div style={{ position: 'absolute', top: 0, right: 0, width: 100, height: 100, background: `radial-gradient(circle at 100% 0%, ${color}18, transparent 70%)`, pointerEvents: 'none' }} />
+
+                  <div style={{
+                    width: 48, height: 48, borderRadius: 14, marginBottom: 20,
+                    background: `${color}18`, border: `1px solid ${color}30`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: color,
+                  }}>
+                    {FEATURE_ICONS[i % FEATURE_ICONS.length]}
+                  </div>
+                  {title && (
+                    <h3 className="font-display font-semibold" style={{ fontSize: 17, color: 'var(--color-text)', marginBottom: 10, letterSpacing: '-0.01em' }}>
+                      {title}
+                    </h3>
+                  )}
+                  <p style={{ color: 'var(--color-muted)', fontSize: 14, lineHeight: 1.75 }}
+                     dangerouslySetInnerHTML={{ __html: parseInline(title ? desc : b) }} />
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/* ── VISUAL BREAK — IMAGE 2 ─────────────────────────────────── */
+function VisualBreakSection({ imageUrl, pageId, title }: { imageUrl?: string | null; pageId: string; title: string }) {
+  const img2 = imageUrl
+    ? picsum(pageId + 'scene', 1400, 500)   /* zweites Bild immer picsum */
+    : picsum(pageId, 1400, 500);
+
+  return (
+    <section style={{ padding: '0', position: 'relative', overflow: 'hidden' }}>
+      {/* Full-width image with overlay */}
+      <div style={{ position: 'relative', width: '100%', height: 480 }}>
+        <Image
+          src={img2}
+          alt={`${title} — Visual`}
+          fill
+          className="object-cover"
+          style={{ opacity: 0.55 }}
+        />
+        {/* Gradient overlays */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, var(--color-bg) 0%, transparent 25%, transparent 75%, var(--color-bg) 100%)' }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, var(--color-bg) 0%, transparent 30%, transparent 70%, var(--color-bg) 100%)' }} />
+        {/* Center overlay text */}
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, textAlign: 'center', padding: '0 24px' }}>
+          <div style={{ width: 60, height: 2, background: 'linear-gradient(90deg, transparent, #7c5cfc, #06c8d9, transparent)', borderRadius: 99, boxShadow: '0 0 16px rgba(124,92,252,0.8)' }} />
+          <p
+            className="font-display font-semibold gradient-text"
+            style={{ fontSize: 'clamp(1.5rem, 3vw, 2.5rem)', letterSpacing: '-0.02em', lineHeight: 1.2, maxWidth: 700 }}
+          >
+            {title}
+          </p>
+          <div style={{ width: 60, height: 2, background: 'linear-gradient(90deg, transparent, #06c8d9, #7c5cfc, transparent)', borderRadius: 99, boxShadow: '0 0 16px rgba(6,200,217,0.8)' }} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ── CTA ────────────────────────────────────────────────────── */
+function CTASection({ section }: { section: LPSection }) {
+  const firstLine = parseProse(section.content);
+
+  return (
+    <section style={{ padding: '120px 24px', position: 'relative', overflow: 'hidden', textAlign: 'center' }}>
+      {/* Dramatic background */}
+      <div className="absolute inset-0">
+        <div className="orb orb-purple absolute" style={{ width: 800, height: 800, top: '-30%', left: '50%', transform: 'translateX(-50%)', opacity: 0.5 }} />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 80% at 50% 50%, transparent 30%, var(--color-bg) 100%)' }} />
+      </div>
+      {/* Glowing top border */}
+      <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 300, height: 2, background: 'linear-gradient(90deg, transparent, #7c5cfc, #06c8d9, transparent)', boxShadow: '0 0 20px rgba(124,92,252,0.8)' }} />
+
+      <div style={{ position: 'relative', zIndex: 1, maxWidth: 700, margin: '0 auto' }}>
+        <div
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '4px 14px', borderRadius: 99,
+            background: 'rgba(124,92,252,0.1)', border: '1px solid rgba(124,92,252,0.3)',
+            color: '#a78bfa', fontSize: 11, fontWeight: 700,
+            letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 28,
+          }}
+        >
+          <span className="pulse-dot w-1.5 h-1.5 rounded-full bg-violet-400 inline-block" />
+          Bereit loszulegen?
+        </div>
+        <h2
+          className="font-display font-bold gradient-text"
+          style={{ fontSize: 'clamp(2.5rem, 5vw, 4.5rem)', letterSpacing: '-0.03em', lineHeight: 1.05, marginBottom: 24 }}
+        >
           {section.heading}
         </h2>
-        {section.content && (
-          <p className="text-[16px] mb-8 leading-relaxed" style={{ color: 'var(--color-muted)' }}>
-            {section.content.split('\n').find(l => l.trim()) ?? ''}
+        {firstLine && (
+          <p style={{ color: 'var(--color-muted)', fontSize: 18, lineHeight: 1.75, marginBottom: 48 }}>
+            {firstLine}
           </p>
         )}
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <button
-            className="px-7 py-3.5 rounded-xl text-[15px] font-semibold text-white glow-accent"
-            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
-          >
-            Jetzt starten
+        <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <button className="btn-primary" style={{ fontSize: 17, padding: '18px 44px', borderRadius: 16 }}>
+            Jetzt starten — kostenlos
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path d="M9 3l6 6-6 6M3 9h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
           </button>
-          <button className="px-7 py-3.5 rounded-xl text-[15px] font-semibold"
-            style={{ background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-muted)' }}>
-            Mehr erfahren
+          <button className="btn-outline" style={{ fontSize: 17 }}>
+            Demo ansehen
           </button>
         </div>
       </div>
@@ -180,79 +475,137 @@ function CTASection({ section }: { section: LPSection }) {
   );
 }
 
+/* ── BODY (generic) ─────────────────────────────────────────── */
 function BodySection({ section }: { section: LPSection }) {
+  const bullets = parseBullets(section.content);
+  const prose   = parseProse(section.content);
+
   return (
-    <section className="py-16 px-6">
-      <div className="max-w-3xl mx-auto">
-        {section.heading && (
-          <h2 className="text-[26px] font-bold mb-6" style={{ color: 'var(--color-text)' }}>{section.heading}</h2>
-        )}
-        <div className="lp-content">
-          {section.content.split('\n').map((l, i) => renderLine(l, i))}
+    <section style={{ padding: '80px 0', position: 'relative' }}>
+      <div style={{ maxWidth: 1152, margin: '0 auto', padding: '0 24px', width: '100%' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: bullets.length > 0 ? '1fr 1fr' : '1fr', gap: 60, alignItems: 'start' }}>
+          <div>
+            {section.heading && (
+              <h2
+                className="font-display font-bold"
+                style={{ fontSize: 'clamp(1.5rem, 3vw, 2.5rem)', letterSpacing: '-0.02em', color: 'var(--color-text)', marginBottom: 20, lineHeight: 1.2 }}
+              >
+                {section.heading}
+              </h2>
+            )}
+            {prose && (
+              <p style={{ color: 'var(--color-muted)', fontSize: 16, lineHeight: 1.85 }}>{prose}</p>
+            )}
+          </div>
+          {bullets.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {bullets.map((b, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                  <div style={{
+                    width: 24, height: 24, borderRadius: 6, flexShrink: 0, marginTop: 2,
+                    background: 'rgba(124,92,252,0.15)', border: '1px solid rgba(124,92,252,0.25)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <path d="M2 5l2.5 2.5L8 3" stroke="#7c5cfc" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                  <p style={{ color: '#d4d4d8', fontSize: 15, lineHeight: 1.7 }}
+                     dangerouslySetInnerHTML={{ __html: parseInline(b) }} />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </section>
   );
 }
 
-/* ── Page ─────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════
+   PAGE
+══════════════════════════════════════════════════════════════ */
 export default async function LPPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const lp = await getLandingPage(id);
   if (!lp) notFound();
 
   const sections = parseLandingPage(lp.landingpage ?? '');
-  /* If parsing yields nothing, fall back to raw render */
   const hasStructure = sections.length > 1;
 
   return (
-    <div>
-      {/* ── Hero image overlay (if available) ────────────── */}
-      {lp.image_url && sections[0]?.type !== 'hero' && (
-        <div className="relative w-full" style={{ height: 400 }}>
-          <Image src={lp.image_url} alt={lp.title} fill className="object-cover opacity-30" priority />
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 0%, var(--color-bg) 100%)' }} />
-        </div>
-      )}
+    <div style={{ background: 'var(--color-bg)', minHeight: '100dvh' }}>
 
-      {/* ── Structured sections ───────────────────────────── */}
-      {hasStructure ? sections.map((section, i) => {
-        switch (section.type) {
-          case 'hero':     return <HeroSection     key={i} section={section} />;
-          case 'problem':  return <ProblemSection  key={i} section={section} />;
-          case 'solution': return <SolutionSection key={i} section={section} />;
-          case 'features': return <FeaturesSection key={i} section={section} />;
-          case 'cta':      return <CTASection      key={i} section={section} />;
-          default:         return <BodySection     key={i} section={section} />;
+      {/* ── Sections ─────────────────────────────────────────── */}
+      {hasStructure ? (() => {
+        /* Inject VisualBreakSection before the last CTA (or before last section) */
+        const withBreak: React.ReactNode[] = [];
+        const ctaIdx = [...sections].reverse().findIndex(s => s.type === 'cta');
+        const insertAt = ctaIdx >= 0 ? sections.length - 1 - ctaIdx : sections.length;
+
+        sections.forEach((section, i) => {
+          if (i === insertAt) {
+            withBreak.push(
+              <VisualBreakSection key="visual-break" imageUrl={lp.image_url} pageId={lp.id} title={lp.title} />
+            );
+          }
+          switch (section.type) {
+            case 'hero':     withBreak.push(<HeroSection     key={i} section={section} imageUrl={lp.image_url} pageId={lp.id} />); break;
+            case 'problem':  withBreak.push(<ProblemSection  key={i} section={section} />); break;
+            case 'solution': withBreak.push(<SolutionSection key={i} section={section} />); break;
+            case 'features': withBreak.push(<FeaturesSection key={i} section={section} />); break;
+            case 'cta':      withBreak.push(<CTASection      key={i} section={section} />); break;
+            default:         withBreak.push(<BodySection     key={i} section={section} />); break;
+          }
+        });
+        /* If no CTA found, append VisualBreak at end */
+        if (ctaIdx < 0) {
+          withBreak.push(<VisualBreakSection key="visual-break" imageUrl={lp.image_url} pageId={lp.id} title={lp.title} />);
         }
-      }) : (
-        /* Fallback: plain title + content */
-        <div className="max-w-3xl mx-auto px-6 py-16">
-          <h1 className="text-[40px] font-bold leading-tight mb-8 gradient-text">{lp.title}</h1>
-          <div className="lp-content">
-            {(lp.landingpage ?? '').split('\n').map((l, i) => renderLine(l, i))}
-          </div>
-        </div>
+        return withBreak;
+      })() : (
+        <>
+          <HeroSection
+            section={{ type: 'hero', heading: lp.title, content: lp.idea ?? '' }}
+            imageUrl={lp.image_url}
+            pageId={lp.id}
+          />
+          <VisualBreakSection imageUrl={lp.image_url} pageId={lp.id} title={lp.title} />
+          <BodySection section={{ type: 'body', heading: '', content: lp.landingpage ?? '' }} />
+        </>
       )}
 
-      {/* ── Footer meta ───────────────────────────────────── */}
-      <div className="max-w-6xl mx-auto px-6 pb-16">
+      {/* ── Back bar ─────────────────────────────────────────── */}
+      <div style={{ padding: '48px 24px 80px', maxWidth: 1152, margin: '0 auto' }}>
         <div
-          className="rounded-xl p-5 flex flex-wrap items-center gap-4 border"
-          style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '16px 24px', borderRadius: 16,
+            background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(124,92,252,0.12)',
+            flexWrap: 'wrap', gap: 12,
+          }}
         >
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-xs font-black flex-shrink-0"
-            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>AI</div>
-          <div className="flex-1">
-            <p className="text-[13px] font-semibold" style={{ color: 'var(--color-text)' }}>
-              KI-generierte Landing Page
-            </p>
-            <p className="text-[12px]" style={{ color: 'var(--color-muted)' }}>
-              Erstellt mit CMCx · {lp.tone} · {lp.language === 'de' ? 'Deutsch' : 'English'}
-            </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div
+              style={{
+                width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                background: 'linear-gradient(135deg, #7c5cfc, #a855f7)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#fff', fontSize: 10, fontWeight: 900,
+              }}
+            >AI</div>
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)' }}>KI-generierte Landing Page</p>
+              <p style={{ fontSize: 12, color: 'var(--color-muted)' }}>
+                CMCx · {lp.tone} · {lp.language === 'de' ? 'Deutsch' : 'English'}
+              </p>
+            </div>
           </div>
-          <a href="/" className="text-[12px] font-medium no-underline" style={{ color: 'var(--color-accent)' }}>
-            ← Alle Pages
+          <a href="/" style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-accent2)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M9 2L4 7l5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Alle Pages
           </a>
         </div>
       </div>

@@ -1,88 +1,113 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import './globals.css';
-
-const inter = Inter({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
 
 export const metadata: Metadata = {
   title: { default: 'CMCx Pages', template: '%s · CMCx Pages' },
-  description: 'KI-generierte Landing Pages — automatisch publiziert.',
+  description: 'KI-generierte Landing Pages — vollautomatisch publiziert vom CMCx Content Orchestration Lab.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="de" className={inter.variable}>
-      <body>
-        {/* ── Top nav ─────────────────────────────────────────── */}
+    <html lang="de">
+      <body className="noise-overlay">
+
+        {/* ── Top nav ──────────────────────────────────────────── */}
         <nav
-          className="fixed top-0 left-0 right-0 z-50 h-14 flex items-center px-6"
+          className="fixed top-0 left-0 right-0 z-50 h-16"
           style={{
-            background: 'rgba(9,9,11,0.8)',
-            backdropFilter: 'blur(12px)',
-            borderBottom: '1px solid var(--color-border)',
+            background: 'rgba(6,6,15,0.7)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            borderBottom: '1px solid rgba(124,92,252,0.1)',
           }}
         >
-          <div className="max-w-6xl mx-auto w-full flex items-center justify-between">
+          <div className="max-w-6xl mx-auto h-full px-6 flex items-center justify-between">
             {/* Logo */}
-            <a href="/" className="flex items-center gap-2.5 no-underline">
+            <a href="/" className="flex items-center gap-3 no-underline group">
               <div
-                className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-black"
-                style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
+                className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-white text-sm relative overflow-hidden"
+                style={{ background: 'linear-gradient(135deg, #7c5cfc, #a855f7)' }}
               >
-                P
+                <span className="relative z-10">C</span>
+                <div
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style={{ background: 'linear-gradient(135deg, #a855f7, #06c8d9)' }}
+                />
               </div>
-              <span className="font-semibold text-[15px]" style={{ color: 'var(--color-text)' }}>
-                CMCx <span style={{ color: 'var(--color-muted)' }}>Pages</span>
+              <span
+                className="font-display font-semibold text-[15px]"
+                style={{ color: 'var(--color-text)', letterSpacing: '-0.01em' }}
+              >
+                CMCx{' '}
+                <span style={{ color: 'var(--color-muted)', fontWeight: 400 }}>Pages</span>
               </span>
             </a>
 
             {/* Nav links */}
             <div className="flex items-center gap-6">
-              <a href="/" className="text-[13px] no-underline" style={{ color: 'var(--color-muted)' }}>
+              <a
+                href="/"
+                className="nav-link text-[13px] font-medium no-underline transition-colors duration-200"
+              >
                 Alle Pages
               </a>
               <a
                 href="http://localhost:3000"
                 target="_blank"
                 rel="noreferrer"
-                className="text-[12px] font-semibold px-3 py-1.5 rounded-lg no-underline"
-                style={{
-                  background: 'rgba(99,102,241,0.15)',
-                  border: '1px solid rgba(99,102,241,0.3)',
-                  color: '#a78bfa',
-                }}
+                className="btn-primary"
+                style={{ padding: '8px 20px', fontSize: '13px', borderRadius: '10px' }}
               >
-                ← Tool
+                Tool öffnen
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M2 10L10 2M10 2H4M10 2v6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </a>
             </div>
           </div>
         </nav>
 
-        {/* ── Content ─────────────────────────────────────────── */}
-        <div style={{ paddingTop: 56 }}>
+        {/* ── Content ──────────────────────────────────────────── */}
+        <div style={{ paddingTop: 64, width: '100%' }}>
           {children}
         </div>
 
-        {/* ── Footer ──────────────────────────────────────────── */}
+        {/* ── Footer ───────────────────────────────────────────── */}
         <footer
-          className="mt-24 border-t py-10 px-6"
-          style={{ borderColor: 'var(--color-border)' }}
+          className="relative mt-24 overflow-hidden"
+          style={{ borderTop: '1px solid rgba(124,92,252,0.1)' }}
         >
-          <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <div
-                className="w-5 h-5 rounded flex items-center justify-center text-white text-[9px] font-black"
-                style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
-              >
-                AI
+          {/* Footer glow */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: 'radial-gradient(ellipse 60% 80% at 50% 100%, rgba(124,92,252,0.08), transparent)',
+            }}
+          />
+          <div className="relative max-w-6xl mx-auto px-6 py-12">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-6 h-6 rounded-lg flex items-center justify-center text-white text-[10px] font-black"
+                  style={{ background: 'linear-gradient(135deg, #7c5cfc, #a855f7)' }}
+                >
+                  AI
+                </div>
+                <div>
+                  <span className="text-[13px] font-medium" style={{ color: 'var(--color-text)' }}>
+                    CMCx
+                  </span>
+                  <span className="text-[13px] ml-1.5" style={{ color: 'var(--color-muted)' }}>
+                    · Content Orchestration Lab
+                  </span>
+                </div>
               </div>
-              <span className="text-[12px]" style={{ color: 'var(--color-muted)' }}>
-                Generiert mit CMCx · Content Orchestration Lab
-              </span>
+              <div className="flex items-center gap-6">
+                <p className="text-[12px]" style={{ color: 'rgba(255,255,255,0.2)' }}>
+                  {new Date().getFullYear()} · KI-generiert · Powered by Stitch
+                </p>
+              </div>
             </div>
-            <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.15)' }}>
-              {new Date().getFullYear()}
-            </p>
           </div>
         </footer>
       </body>
