@@ -206,9 +206,7 @@ function ProblemSection({ section }: { section: LPSection }) {
       <div style={{ maxWidth: 1152, margin: '0 auto', padding: '0 24px', width: '100%' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'center' }}>
           <div>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 14px', borderRadius: 99, background: 'rgba(247,37,133,0.1)', border: '1px solid rgba(247,37,133,0.25)', color: '#f72585', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 20 }}>
-              ⚡ Das Problem
-            </div>
+            <div style={{ width: 40, height: 4, borderRadius: 99, background: 'linear-gradient(90deg, #f72585, transparent)', marginBottom: 24 }} />
             <h2 className="font-display font-bold" style={{ fontSize: 'clamp(1.8rem, 3.5vw, 3rem)', letterSpacing: '-0.02em', color: 'var(--color-text)', marginBottom: 20, lineHeight: 1.15 }}>
               {heading}
             </h2>
@@ -248,22 +246,12 @@ function SolutionSection({ section }: { section: LPSection }) {
       <div style={{ maxWidth: 1152, margin: '0 auto', padding: '0 24px', width: '100%', position: 'relative', zIndex: 1 }}>
         {/* Top label */}
         <div style={{ textAlign: 'center', marginBottom: 60 }}>
-          <div
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              padding: '4px 14px', borderRadius: 99,
-              background: 'rgba(6,200,217,0.1)', border: '1px solid rgba(6,200,217,0.25)',
-              color: '#06c8d9', fontSize: 11, fontWeight: 700,
-              letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 20,
-            }}
-          >
-            ✦ Die Lösung
-          </div>
+          <div style={{ width: 40, height: 4, borderRadius: 99, background: 'linear-gradient(90deg, #06c8d9, transparent)', margin: '0 auto 24px' }} />
           <h2
             className="font-display font-bold gradient-text-cyan"
             style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)', letterSpacing: '-0.02em', lineHeight: 1.15 }}
           >
-            {cleanHeading(section.heading) || section.fields['Headline'] || 'Die Lösung'}
+            {cleanHeading(section.heading) || section.fields['Headline'] || ''}
           </h2>
           {prose && (
             <p style={{ color: 'var(--color-muted)', fontSize: 18, maxWidth: 620, margin: '20px auto 0', lineHeight: 1.75 }}>
@@ -315,22 +303,12 @@ function FeaturesSection({ section }: { section: LPSection }) {
       <div style={{ maxWidth: 1152, margin: '0 auto', padding: '0 24px', width: '100%', position: 'relative', zIndex: 1 }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 64 }}>
-          <div
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              padding: '4px 14px', borderRadius: 99,
-              background: 'rgba(124,92,252,0.1)', border: '1px solid rgba(124,92,252,0.25)',
-              color: '#a78bfa', fontSize: 11, fontWeight: 700,
-              letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 20,
-            }}
-          >
-            ◆ Features & Vorteile
-          </div>
+          <div style={{ width: 40, height: 4, borderRadius: 99, background: 'linear-gradient(90deg, #7c5cfc, #a78bfa)', margin: '0 auto 24px' }} />
           <h2
             className="font-display font-bold gradient-text"
             style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)', letterSpacing: '-0.02em', lineHeight: 1.15 }}
           >
-            {cleanHeading(section.heading) || section.fields['Headline'] || 'Features & Vorteile'}
+            {cleanHeading(section.heading) || section.fields['Headline'] || ''}
           </h2>
           {prose && (
             <p style={{ color: 'var(--color-muted)', fontSize: 18, maxWidth: 560, margin: '20px auto 0', lineHeight: 1.75 }}>

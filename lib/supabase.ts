@@ -75,6 +75,42 @@ function extractFields(raw: string): Record<string, string> {
   return fields;
 }
 
+/* ── TAG marker regex — matches [PROBLEM], [SOLUTION] etc. in headings ── */
+const TAG_RE = /^\[([A-Z_]+)\]\s*/;
+
+/**
+ * Detect section type from:
+ * 1. New format: [TAG] prefix → "## [PROBLEM] Warum klassische X scheitern"
+ * 2. Legacy format: keyword matching in the heading text
+ */
+function detectType(raw: string): { type: LPSection['type']; heading: string } {
+  const tagMatch = raw.match(TAG_RE);
+  if (tagMatch) {
+    const tag  = tagMatch[1];
+    const clean = raw.replace(TAG_RE, '').trim();
+    const type: LPSection['type'] =
+      tag === 'PROBLEM'  ? 'problem'  :
+      tag === 'SOLUTION' ? 'solution' :
+      tag === 'FEATURES' ? 'features' :
+      tag === 'CTA'      ? 'cta'      :
+      tag === 'HERO'     ? 'hero'     :
+      'body';
+    return { type, heading: clean };
+  }
+
+  /* Legacy: generic label matching */
+  const h = raw.toLowerCase();
+  const type: LPSection['type'] =
+    h.includes('problem') || h.includes('herausforderung') || h.includes('challenge') ? 'problem'  :
+    h.includes('lösung')  || h.includes('solution')                                    ? 'solution' :
+    h.includes('feature') || h.includes('vorteile') || h.includes('leistung')         ? 'features' :
+    h.includes('cta')     || h.includes('closing')  || h.includes('jetzt') ||
+      h.includes('kontakt') || h.includes('start')  || h.includes('call')             ? 'cta'      :
+    h === 'hero'                                                                        ? 'hero'     :
+    'body';
+  return { type, heading: raw };
+}
+
 export function parseLandingPage(raw: string): LPSection[] {
   const sections: LPSection[] = [];
   const lines = raw.split('\n');
@@ -84,7 +120,6 @@ export function parseLandingPage(raw: string): LPSection[] {
   const flush = () => {
     if (currentSection) {
       const rawContent = buf.join('\n').trim();
-      /* Keep full original content — extractFields does NOT strip it */
       currentSection.content = rawContent;
       currentSection.fields  = extractFields(rawContent);
       if (rawContent) sections.push(currentSection);
@@ -98,16 +133,8 @@ export function parseLandingPage(raw: string): LPSection[] {
       currentSection = { type: 'hero', heading: line.slice(2).trim(), content: '', fields: {} };
     } else if (line.startsWith('## ')) {
       flush();
-      const h = line.slice(3).trim().toLowerCase();
-      const type =
-        h.includes('problem') || h.includes('herausforderung') || h.includes('challenge') ? 'problem' :
-        h.includes('lösung') || h.includes('solution')                                     ? 'solution' :
-        h.includes('feature') || h.includes('vorteile') || h.includes('leistung')         ? 'features' :
-        h.includes('cta') || h.includes('closing') || h.includes('jetzt') ||
-          h.includes('kontakt') || h.includes('start') || h.includes('call')              ? 'cta'      :
-        h.includes('hero')                                                                  ? 'hero'     :
-        'body';
-      currentSection = { type, heading: line.slice(3).trim(), content: '', fields: {} };
+      const { type, heading } = detectType(line.slice(3).trim());
+      currentSection = { type, heading, content: '', fields: {} };
     } else {
       buf.push(line);
     }
