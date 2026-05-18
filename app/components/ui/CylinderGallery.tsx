@@ -4,153 +4,177 @@ import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import type { LandingPage } from '../../../lib/supabase';
 
+/* ── Helpers ──────────────────────────────────────────────── */
 function fallbackImg(id: string) {
   const s = id.replace(/[^a-z0-9]/gi, '').slice(0, 12) || 'cmcx';
   return `https://picsum.photos/seed/${s}/600/400`;
 }
 
-/* Per-card image with automatic error→fallback */
-function CardImage({ page }: { page: LandingPage }) {
+/* ── BandCard ─────────────────────────────────────────────── */
+function BandCard({ page, active }: { page: LandingPage; active: boolean }) {
   const [src, setSrc] = useState<string>(page.image_url || fallbackImg(page.id));
   return (
-    <Image
-      src={src}
-      alt={page.title}
-      fill
-      sizes="340px"
-      style={{ objectFit: 'cover' }}
-      onError={() => setSrc(fallbackImg(page.id))}
-    />
+    <a
+      href={`/lp/${page.id}`}
+      style={{
+        display: 'flex', flexDirection: 'column', textDecoration: 'none',
+        borderRadius: 16, overflow: 'hidden', flexShrink: 0, width: 260,
+        border:     active ? '1px solid rgba(124,92,252,0.65)' : '1px solid rgba(124,92,252,0.18)',
+        background: 'var(--color-surface)',
+        boxShadow:  active
+          ? '0 0 36px rgba(124,92,252,0.32), 0 14px 44px rgba(0,0,0,0.5)'
+          : '0 4px 20px rgba(0,0,0,0.25)',
+        transform:   active ? 'scale(1.06)' : 'scale(1)',
+        transition:  'transform 0.4s cubic-bezier(.4,0,.2,1), box-shadow 0.4s, border-color 0.4s',
+        cursor: 'pointer',
+      }}
+    >
+      <div style={{ position: 'relative', height: 160, overflow: 'hidden', flexShrink: 0 }}>
+        <Image src={src} alt={page.title} fill sizes="280px"
+          style={{ objectFit: 'cover' }}
+          onError={() => setSrc(fallbackImg(page.id))} />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top,rgba(6,6,15,0.88) 0%,transparent 55%)' }} />
+        <div style={{ position: 'absolute', top: 10, left: 12 }}>
+          <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '2px 7px', borderRadius: 99, background: 'rgba(124,92,252,0.22)', border: '1px solid rgba(124,92,252,0.35)', color: '#a78bfa' }}>
+            {page.tone}
+          </span>
+        </div>
+      </div>
+      <div style={{ padding: '14px 16px 16px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 10 }}>
+        <p style={{ color: '#eeeeff', fontWeight: 700, fontSize: 13, lineHeight: 1.45, fontFamily: 'var(--font-display)', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', margin: 0 }}>
+          {page.title}
+        </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: active ? '#c4b5fd' : '#7c5cfc', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.2s' }}>
+          Lesen
+          <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1.5 4.5h6M5 2l2.5 2.5L5 7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </div>
+      </div>
+    </a>
   );
 }
 
+/* ── GridCard ─────────────────────────────────────────────── */
+function GridCard({ page }: { page: LandingPage }) {
+  const [src, setSrc] = useState<string>(page.image_url || fallbackImg(page.id));
+  return (
+    <a href={`/lp/${page.id}`}
+      style={{ display: 'flex', flexDirection: 'column', textDecoration: 'none', borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(124,92,252,0.18)', background: 'var(--color-surface)', transition: 'transform 0.22s, border-color 0.22s, box-shadow 0.22s' }}
+      onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-5px) scale(1.02)'; el.style.borderColor = 'rgba(124,92,252,0.5)'; el.style.boxShadow = '0 20px 56px rgba(124,92,252,0.22)'; }}
+      onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = ''; el.style.borderColor = 'rgba(124,92,252,0.18)'; el.style.boxShadow = ''; }}>
+      <div style={{ position: 'relative', height: 140, overflow: 'hidden', flexShrink: 0 }}>
+        <Image src={src} alt={page.title} fill sizes="(max-width:1440px) 16vw, 220px" style={{ objectFit: 'cover' }} onError={() => setSrc(fallbackImg(page.id))} />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top,rgba(6,6,15,0.85) 0%,transparent 55%)' }} />
+        <div style={{ position: 'absolute', top: 8, left: 10 }}>
+          <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '2px 7px', borderRadius: 99, background: 'rgba(124,92,252,0.22)', border: '1px solid rgba(124,92,252,0.35)', color: '#a78bfa' }}>{page.tone}</span>
+        </div>
+      </div>
+      <div style={{ padding: '12px 14px 14px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 8 }}>
+        <p style={{ color: '#eeeeff', fontWeight: 700, fontSize: 12, lineHeight: 1.45, fontFamily: 'var(--font-display)', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', margin: 0 }}>{page.title}</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#7c5cfc', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          Lesen <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1.5 4.5h6M5 2l2.5 2.5L5 7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </div>
+      </div>
+    </a>
+  );
+}
+
+/* ── Constants ────────────────────────────────────────────── */
+const CARD_W      = 260;
+const CARD_GAP    = 16;
+const STEP        = CARD_W + CARD_GAP;
+const AUTO_SPEED  = 1.0;   // px/frame auto-scroll
+const MAX_SPEED   = 14.0;  // px/frame max mouse-controlled speed
+const DEAD_ZONE   = 0.20;  // inner 40% of band width = neutral zone
+
+/* ── Main ─────────────────────────────────────────────────── */
 interface Props { pages: LandingPage[] }
 
 export default function CylinderGallery({ pages }: Props) {
   if (pages.length === 0) return null;
 
-  const containerRef = useRef<HTMLDivElement>(null);
-  const sceneRef     = useRef<HTMLDivElement>(null);
-  const wrapRefs     = useRef<(HTMLDivElement | null)[]>([]);
-  const innerRefs    = useRef<(HTMLAnchorElement | null)[]>([]);
+  const [showGrid,  setShowGrid]  = useState(false);
+  const [activeIdx, setActiveIdx] = useState(0);
 
-  const N          = pages.length;
-  const CARD_W     = 320;
-  const CARD_H     = 210;
-  /* radius so cards don't overlap */
-  const RADIUS     = Math.max(560,
-    Math.round(CARD_W / (2 * Math.tan(Math.PI / Math.max(N, 5)))) + 40);
-  const ANGLE_STEP = 360 / N;
+  const wrapRef    = useRef<HTMLDivElement>(null);
+  const trackRef   = useRef<HTMLDivElement>(null);
+  const cardRefs   = useRef<(HTMLDivElement | null)[]>([]);
 
-  /* MAX_ROT_SPEED: deg/frame at full mouse edge → 60fps → ~2°×60 = 120°/s */
-  const MAX_ROT_SPEED = 2.2;
-  const DEAD_ZONE     = 0.10;  /* center fraction where velocity = 0 */
-
+  /* Animation state — mutable, not reactive */
   const st = useRef({
-    rotY:        0,   /* accumulated — never resets */
-    rotVel:      0,   /* current deg/frame */
-    targetRotVel:0,   /* desired deg/frame from mouse */
-    mouseNX: 0, mouseNY: 0,
-    inside: false,
-    time: 0,
+    pos:       0,
+    vel:       0,
+    targetVel: AUTO_SPEED,
+    inside:    false,
+    time:      0,
   });
 
+  const N = pages.length;
+  /* Duplicate cards for seamless infinite loop */
+  const doubled = [...pages, ...pages];
+  const loopLen = N * STEP; // width of one full set
+
   useEffect(() => {
-    const container = containerRef.current;
-    const scene     = sceneRef.current;
-    if (!container || !scene) return;
-
+    if (showGrid) return;
+    const wrap  = wrapRef.current;
+    const track = trackRef.current;
+    if (!wrap || !track) return;
     const s = st.current;
+    s.pos = 0; s.vel = 0; s.targetVel = AUTO_SPEED;
 
-    /* ── Dead-zone helper ────────────────────────────────────── */
-    const applyDeadZone = (v: number) => {
-      if (Math.abs(v) < DEAD_ZONE) return 0;
-      return v > 0
-        ? (v - DEAD_ZONE) / (1 - DEAD_ZONE)
-        : (v + DEAD_ZONE) / (1 - DEAD_ZONE);
-    };
-
-    /* ── Mouse tracking ──────────────────────────────────────── */
     const onMove = (e: MouseEvent) => {
-      const rect = container.getBoundingClientRect();
-      s.inside =
-        e.clientX >= rect.left && e.clientX <= rect.right &&
-        e.clientY >= rect.top  && e.clientY <= rect.bottom;
+      const rect = wrap.getBoundingClientRect();
+      s.inside = e.clientX >= rect.left && e.clientX <= rect.right &&
+                 e.clientY >= rect.top  && e.clientY <= rect.bottom;
+      if (!s.inside) { s.targetVel = AUTO_SPEED; return; }
 
-      const cx = rect.left + rect.width  / 2;
-      const cy = rect.top  + rect.height / 2;
-      s.mouseNX = Math.max(-1, Math.min(1, (e.clientX - cx) / (rect.width  / 2)));
-      s.mouseNY = Math.max(-1, Math.min(1, (e.clientY - cy) / (rect.height / 2)));
+      /* Normalised position from center: -1 (far left) .. +1 (far right) */
+      const nx = (e.clientX - (rect.left + rect.width / 2)) / (rect.width / 2);
 
-      if (s.inside) {
-        s.targetRotVel = applyDeadZone(s.mouseNX) * MAX_ROT_SPEED;
+      /* Dead zone in the middle */
+      let driven: number;
+      if (Math.abs(nx) <= DEAD_ZONE) {
+        driven = 0;
       } else {
-        s.targetRotVel = 0;
+        const sign = nx > 0 ? 1 : -1;
+        const t    = (Math.abs(nx) - DEAD_ZONE) / (1 - DEAD_ZONE); // 0..1
+        driven = sign * t * MAX_SPEED;
       }
+      s.targetVel = driven;
     };
+
+    const onLeave = () => { s.inside = false; s.targetVel = AUTO_SPEED; };
 
     window.addEventListener('mousemove', onMove, { passive: true });
+    wrap.addEventListener('mouseleave', onLeave);
 
-    /* ── Animation loop ──────────────────────────────────────── */
     let rafId: number;
     const tick = (ts: number) => {
       s.time = ts * 0.001;
 
-      /* Smooth velocity (acceleration / deceleration) */
-      s.rotVel += (s.targetRotVel - s.rotVel) * 0.08;
+      /* Lerp velocity towards target */
+      s.vel += (s.targetVel - s.vel) * 0.10;
 
-      /* Accumulate rotation — endlos */
-      s.rotY += s.rotVel;
+      s.pos += s.vel;
 
-      if (scene) {
-        scene.style.transform = `rotateY(${s.rotY}deg)`;
-      }
+      /* Seamless infinite loop */
+      if (s.pos >= loopLen)  s.pos -= loopLen;
+      if (s.pos < 0)         s.pos += loopLen;
 
-      /* ── Per-card effects ──────────────────────────────────── */
-      for (let i = 0; i < N; i++) {
-        const inner = innerRefs.current[i];
-        if (!inner) continue;
+      track.style.transform = `translateX(${-s.pos}px)`;
 
-        /* World angle — s.rotY accumulates endlessly, use modulo */
-        let worldAngle = ((ANGLE_STEP * i - (s.rotY % 360) + 360) % 360);
-        if (worldAngle > 180) worldAngle -= 360;           /* -180..180 */
-        const absAngle = Math.abs(worldAngle);
+      /* Per-card: tilt (rotateZ) based on velocity + gentle individual wobble */
+      const tiltBase = s.vel * 0.55;   // lean with speed direction
+      cardRefs.current.forEach((el, i) => {
+        if (!el) return;
+        const wobble = Math.sin(s.time * 1.8 + i * 0.9) * 0.6; // subtle sway
+        el.style.transform = `rotateZ(${(tiltBase + wobble).toFixed(3)}deg)`;
+      });
 
-        /* facing: 1 = front, 0 = 90° sideways */
-        const facing = Math.max(0, Math.cos(absAngle * Math.PI / 180));
-        const isFront = facing > 0.25;
-
-        /* Wobble: gentle oscillation while facing */
-        const wobble = Math.sin(s.time * 1.4 + i * 1.3) * 5 * facing;
-
-        /* Tilt toward mouse — only for front cards */
-        const tiltX = wobble * facing;
-        const tiltY = s.mouseNX * 12 * facing;
-
-        /* Scale + glow */
-        const scale = 1 + 0.16 * facing;
-        const glow  = facing * 0.75;
-
-        inner.style.transform =
-          `rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(${scale})`;
-
-        inner.style.boxShadow = isFront
-          ? `0 0 ${facing * 70}px rgba(124,92,252,${(glow * 0.85).toFixed(2)}),` +
-            `0 ${facing * 20}px ${facing * 60}px rgba(0,0,0,0.55),`             +
-            `inset 0 1px 0 rgba(255,255,255,${(facing * 0.12).toFixed(2)})`
-          : '0 4px 20px rgba(0,0,0,0.4)';
-
-        /* Backface: hide cards that have rotated past ~100° */
-        const wrap = wrapRefs.current[i];
-        if (wrap) {
-          wrap.style.opacity   = absAngle > 95 ? '0' : String(Math.max(0.15, facing));
-          wrap.style.zIndex    = String(Math.round(facing * 100));
-        }
-
-        /* Title overlay brightness */
-        const titleEl = inner.querySelector('.cyl-title') as HTMLElement | null;
-        if (titleEl) titleEl.style.opacity = String(0.45 + facing * 0.55);
-      }
+      /* Which card is nearest the viewport center? */
+      const viewCenterX = wrap.getBoundingClientRect().width / 2;
+      const centerPos   = s.pos + viewCenterX - 80;
+      const idx         = Math.round(centerPos / STEP) % N;
+      setActiveIdx(((idx % N) + N) % N);
 
       rafId = requestAnimationFrame(tick);
     };
@@ -158,177 +182,70 @@ export default function CylinderGallery({ pages }: Props) {
     rafId = requestAnimationFrame(tick);
     return () => {
       window.removeEventListener('mousemove', onMove);
+      wrap.removeEventListener('mouseleave', onLeave);
       cancelAnimationFrame(rafId);
     };
-  }, [N, ANGLE_STEP, RADIUS]);
+  }, [showGrid, N, loopLen]);
 
   return (
     <div style={{ position: 'relative', width: '100%' }}>
-      {/* Instruction hint */}
-      <p
-        className="font-display text-center text-[11px] font-semibold uppercase tracking-[0.2em] mb-8"
-        style={{ color: 'var(--color-muted)', opacity: 0.6 }}
-      >
-        ← Maus an den linken oder rechten Rand halten zum Drehen →
-      </p>
 
-      {/* 3D viewport */}
-      <div
-        ref={containerRef}
-        style={{
-          width: '100%',
-          height: 520,
-          perspective: '1100px',
-          perspectiveOrigin: '50% 50%',
-          position: 'relative',
-        }}
-      >
-        {/* Edge fog — left / right */}
-        <div
-          style={{
-            position: 'absolute', inset: 0, zIndex: 20, pointerEvents: 'none',
-            background:
-              'linear-gradient(90deg,' +
-              'var(--color-bg) 0%,transparent 18%,transparent 82%,var(--color-bg) 100%)',
-          }}
-        />
-        {/* Edge fog — top / bottom */}
-        <div
-          style={{
-            position: 'absolute', inset: 0, zIndex: 20, pointerEvents: 'none',
-            background:
-              'linear-gradient(180deg,' +
-              'var(--color-bg) 0%,transparent 18%,transparent 82%,var(--color-bg) 100%)',
-          }}
-        />
+      {/* ── Controls ──────────────────────────────────────────── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
 
-        {/* Scene — origin at center */}
-        <div
-          ref={sceneRef}
-          style={{
-            position: 'absolute',
-            left: '50%', top: '50%',
-            width: 0, height: 0,
-            transformStyle: 'preserve-3d',
-            willChange: 'transform',
-          }}
-        >
-          {pages.map((page, i) => {
-            const angle = ANGLE_STEP * i;
-
-            return (
-              /* Cylinder slot — pure positioning, no visual */
-              <div
-                key={page.id}
-                ref={el => { wrapRefs.current[i] = el; }}
-                style={{
-                  position: 'absolute',
-                  width: CARD_W, height: CARD_H,
-                  marginLeft: -(CARD_W / 2),
-                  marginTop:  -(CARD_H / 2),
-                  transform:  `rotateY(${angle}deg) translateZ(${RADIUS}px)`,
-                  transformStyle: 'preserve-3d',
-                  transition: 'opacity 0.15s',
-                  willChange: 'opacity',
-                }}
-              >
-                {/* Inner card — receives tilt + scale + glow from RAF */}
-                <a
-                  href={`/lp/${page.id}`}
-                  ref={el => { innerRefs.current[i] = el; }}
-                  style={{
-                    display: 'block',
-                    width: '100%', height: '100%',
-                    borderRadius: 20,
-                    overflow: 'hidden',
-                    position: 'relative',
-                    textDecoration: 'none',
-                    border: '1px solid rgba(124,92,252,0.2)',
-                    transformStyle: 'preserve-3d',
-                    backfaceVisibility: 'hidden',
-                    WebkitBackfaceVisibility: 'hidden',
-                    willChange: 'transform, box-shadow',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {/* Background image — error→picsum fallback */}
-                  <CardImage page={page} />
-
-                  {/* Dark gradient overlay */}
-                  <div
-                    style={{
-                      position: 'absolute', inset: 0,
-                      background:
-                        'linear-gradient(to top,' +
-                        'rgba(6,6,15,0.95) 0%,' +
-                        'rgba(6,6,15,0.45) 55%,' +
-                        'rgba(6,6,15,0.1) 100%)',
-                    }}
-                  />
-
-                  {/* Purple tint */}
-                  <div style={{ position: 'absolute', inset: 0, background: 'rgba(124,92,252,0.07)' }} />
-
-                  {/* Top badge */}
-                  <div style={{ position: 'absolute', top: 14, left: 14 }}>
-                    <span
-                      className="font-display"
-                      style={{
-                        fontSize: 9, fontWeight: 700,
-                        letterSpacing: '0.12em', textTransform: 'uppercase',
-                        padding: '3px 9px', borderRadius: 99,
-                        background: 'rgba(124,92,252,0.18)',
-                        border: '1px solid rgba(124,92,252,0.35)',
-                        color: '#a78bfa',
-                      }}
-                    >
-                      {page.tone}
-                    </span>
-                  </div>
-
-                  {/* Title */}
-                  <div
-                    className="cyl-title"
-                    style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '14px 18px' }}
-                  >
-                    <p
-                      className="font-display"
-                      style={{
-                        color: '#fff',
-                        fontWeight: 700,
-                        fontSize: 14,
-                        lineHeight: 1.35,
-                        letterSpacing: '-0.01em',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                      }}
-                    >
-                      {page.title}
-                    </p>
-                  </div>
-
-                  {/* Hover arrow indicator */}
-                  <div
-                    style={{
-                      position: 'absolute', bottom: 14, right: 16,
-                      width: 28, height: 28, borderRadius: '50%',
-                      background: 'rgba(124,92,252,0.2)',
-                      border: '1px solid rgba(124,92,252,0.4)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                      <path d="M2 6h8M6.5 3l3.5 3-3.5 3" stroke="#a78bfa" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-                </a>
-              </div>
-            );
-          })}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, opacity: showGrid ? 0 : 1, transition: 'opacity 0.3s', pointerEvents: showGrid ? 'none' : 'auto' }}>
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-muted)', opacity: 0.55 }}>
+            ← Mitte = Stop &nbsp;·&nbsp; Rand = Schnell →
+          </span>
         </div>
+
+        <button
+          onClick={() => setShowGrid(g => !g)}
+          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 18px', borderRadius: 10, background: showGrid ? 'rgba(124,92,252,0.18)' : 'rgba(255,255,255,0.04)', border: `1px solid ${showGrid ? 'rgba(124,92,252,0.45)' : 'rgba(255,255,255,0.1)'}`, color: showGrid ? '#a78bfa' : 'var(--color-muted)', fontSize: 12, fontWeight: 600, fontFamily: 'var(--font-display)', letterSpacing: '0.04em', cursor: 'pointer', transition: 'all 0.2s' }}>
+          {showGrid ? (
+            <><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M2 4h10M2 10h10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>Band-Ansicht</>
+          ) : (
+            <><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><rect x="8" y="1" width="5" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><rect x="1" y="8" width="5" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><rect x="8" y="8" width="5" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.4"/></svg>Alle {pages.length} Pages</>
+          )}
+        </button>
       </div>
+
+      {/* ── Grid ──────────────────────────────────────────────── */}
+      {showGrid && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', gap: 16 }}>
+          {pages.map(p => <GridCard key={p.id} page={p} />)}
+        </div>
+      )}
+
+      {/* ── Band ──────────────────────────────────────────────── */}
+      {!showGrid && (
+        <div style={{ position: 'relative' }}>
+          {/* Left fog */}
+          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 100, background: 'linear-gradient(90deg,var(--color-bg) 0%,transparent 100%)', zIndex: 10, pointerEvents: 'none' }} />
+          {/* Right fog */}
+          <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 100, background: 'linear-gradient(270deg,var(--color-bg) 0%,transparent 100%)', zIndex: 10, pointerEvents: 'none' }} />
+
+          {/* Viewport clip */}
+          <div ref={wrapRef} style={{ overflow: 'hidden', padding: '16px 80px 20px' }}>
+            {/* Scrolling track — translated by RAF */}
+            <div ref={trackRef} style={{ display: 'flex', gap: CARD_GAP, width: 'max-content', willChange: 'transform' }}>
+              {doubled.map((page, i) => (
+                <div key={`${page.id}-${i}`} ref={el => { cardRefs.current[i] = el; }}
+                  style={{ willChange: 'transform', transformOrigin: 'center bottom' }}>
+                  <BandCard page={page} active={(i % N) === activeIdx} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Dot indicators */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 8 }}>
+            {pages.map((_, i) => (
+              <div key={i} style={{ width: i === activeIdx ? 22 : 6, height: 6, borderRadius: 99, background: i === activeIdx ? '#7c5cfc' : 'rgba(124,92,252,0.25)', transition: 'all 0.3s cubic-bezier(.4,0,.2,1)' }} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
