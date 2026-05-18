@@ -512,17 +512,12 @@ export default async function LPPage({ params }: { params: Promise<{ id: string 
 
       {/* ── Sections ─────────────────────────────────────────── */}
       {hasStructure ? (() => {
-        /* Inject VisualBreakSection before the last CTA (or before last section) */
+        /* VisualBreak wird direkt nach der Hero-Section eingefügt */
+        const heroIdx = sections.findIndex(s => s.type === 'hero');
+        const insertAt = heroIdx >= 0 ? heroIdx + 1 : 1;
         const withBreak: React.ReactNode[] = [];
-        const ctaIdx = [...sections].reverse().findIndex(s => s.type === 'cta');
-        const insertAt = ctaIdx >= 0 ? sections.length - 1 - ctaIdx : sections.length;
 
         sections.forEach((section, i) => {
-          if (i === insertAt) {
-            withBreak.push(
-              <VisualBreakSection key="visual-break" imageUrl={lp.image_url} pageId={lp.id} title={lp.title} />
-            );
-          }
           switch (section.type) {
             case 'hero':     withBreak.push(<HeroSection     key={i} section={section} imageUrl={lp.image_url} pageId={lp.id} pageTitle={lp.title} />); break;
             case 'problem':  withBreak.push(<ProblemSection  key={i} section={section} />); break;
@@ -531,10 +526,16 @@ export default async function LPPage({ params }: { params: Promise<{ id: string 
             case 'cta':      withBreak.push(<CTASection      key={i} section={section} />); break;
             default:         withBreak.push(<BodySection     key={i} section={section} />); break;
           }
+          /* VisualBreak nach Hero einfügen */
+          if (i === insertAt - 1) {
+            withBreak.push(
+              <VisualBreakSection key="visual-break" imageUrl={lp.image_url} pageId={lp.id} title={lp.title} />
+            );
+          }
         });
-        /* If no CTA found, append VisualBreak at end */
-        if (ctaIdx < 0) {
-          withBreak.push(<VisualBreakSection key="visual-break" imageUrl={lp.image_url} pageId={lp.id} title={lp.title} />);
+        /* Fallback: kein Hero → am Anfang */
+        if (heroIdx < 0) {
+          withBreak.unshift(<VisualBreakSection key="visual-break" imageUrl={lp.image_url} pageId={lp.id} title={lp.title} />);
         }
         return withBreak;
       })() : (
