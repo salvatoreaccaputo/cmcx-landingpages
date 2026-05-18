@@ -456,7 +456,6 @@ function CTASection({ section }: { section: LPSection }) {
 /* ── BODY (generic) ─────────────────────────────────────────── */
 const SECTION_LABEL_MAP: Record<string, string> = {
   'SOCIAL PROOF': 'Das sagen unsere Kunden',
-  'PRICING':      'Preise & Pakete',
   'TESTIMONIALS': 'Kundenstimmen',
   'BENEFITS':     'Ihre Vorteile',
 };
@@ -528,7 +527,13 @@ export default async function LPPage({ params }: { params: Promise<{ id: string 
         const insertAt = heroIdx >= 0 ? heroIdx + 1 : 1;
         const withBreak: React.ReactNode[] = [];
 
+        /* Sektionen die vom KI-Template immer generisch befüllt werden → überspringen */
+        const SKIP_HEADINGS = ['PRICING', 'PREISE', 'PREISE & PAKETE'];
+
         sections.forEach((section, i) => {
+          /* PRICING immer ausblenden — KI generiert das immer als Platzhalter */
+          if (SKIP_HEADINGS.includes((section.heading ?? '').toUpperCase().trim())) return;
+
           switch (section.type) {
             case 'hero':     withBreak.push(<HeroSection     key={i} section={section} imageUrl={lp.image_url} pageId={lp.id} pageTitle={lp.title} />); break;
             case 'problem':  withBreak.push(<ProblemSection  key={i} section={section} />); break;
