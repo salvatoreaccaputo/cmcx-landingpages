@@ -75,25 +75,37 @@ function parseBullets(content: string) {
 /* Template instruction prefixes that must never appear as visible prose */
 const TEMPLATE_LINE_RE = /^(CTA|Button|Primary CTA|Subheadline|Subline|Headline|Überschrift|Unterüberschrift)\s*:/i;
 
-function parseProse(content: string) {
+function isNonProseLine(l: string) {
+  return (
+    !l ||
+    l.startsWith('- ') ||
+    l.startsWith('* ') ||
+    l.startsWith('>') ||
+    /^\d+\.\s/.test(l) ||
+    /^[^\w\s\-*]{1,3}\s+/u.test(l) ||
+    /^\*\*[^*]+:\*\*/.test(l) ||
+    TEMPLATE_LINE_RE.test(l)
+  );
+}
+
+/** Returns text paragraphs, preserving the blank-line structure of the original content. */
+function parseParagraphs(content: string): string[] {
   return content
-    .split('\n')
-    .map(l => l.trim())
-    .filter(l =>
-      l &&
-      !l.startsWith('- ') &&
-      !l.startsWith('* ') &&
-      !l.startsWith('>') &&
-      !/^\d+\.\s/.test(l) &&
-      /* Filter symbol/emoji bullet lines */
-      !/^[^\w\s\-*]{1,3}\s+/u.test(l) &&
-      /* Filter standalone **Key:** value template lines */
-      !/^\*\*[^*]+:\*\*/.test(l) &&
-      /* Filter template instruction lines like "CTA: ...", "Button: ..." */
-      !TEMPLATE_LINE_RE.test(l)
+    .split(/\n[ \t]*\n/)  /* Split on blank lines */
+    .map(block =>
+      block
+        .split('\n')
+        .map(l => l.trim())
+        .filter(l => !isNonProseLine(l))
+        .join(' ')
+        .trim()
     )
-    .join(' ')
-    .trim();
+    .filter(Boolean);
+}
+
+/** Collapse all paragraphs into a single string (for short hero sublines etc.). */
+function parseProse(content: string): string {
+  return parseParagraphs(content).join(' ');
 }
 
 /* Strip "HERO", "PROBLEM" etc. from section headings — these are template labels */
@@ -205,33 +217,51 @@ function HeroSection({ section, imageUrl, pageId, pageTitle }: { section: LPSect
 
 /* ── PROBLEM ────────────────────────────────────────────────── */
 function ProblemSection({ section }: { section: LPSection }) {
-  const bullets  = parseBullets(section.content);
-  const prose    = section.fields['Description'] || section.fields['Beschreibung'] || parseProse(section.content);
-  const heading  = cleanHeading(section.heading) || section.fields['Headline'] || 'Die Herausforderung';
+  const bullets    = parseBullets(section.content);
+  const paragraphs = parseParagraphs(section.fields['Description'] || section.fields['Beschreibung'] || section.content);
+  const heading    = cleanHeading(section.heading) || section.fields['Headline'] || 'Die Herausforderung';
+  const hasBullets = bullets.length > 0;
 
   return (
     <section style={{ padding: '100px 0', background: 'var(--color-bg)', position: 'relative', overflow: 'hidden' }}>
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 60% 50% at 20% 50%, rgba(247,37,133,0.06), transparent)' }} />
       <div style={{ maxWidth: 1152, margin: '0 auto', padding: '0 24px', width: '100%' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'center' }}>
-          <div>
+
+        {hasBullets ? (
+          /* Two-column: prose left, bullet cards right */
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'center' }}>
+            <div>
+              <div style={{ width: 40, height: 4, borderRadius: 99, background: 'linear-gradient(90deg, #f72585, transparent)', marginBottom: 24 }} />
+              <h2 className="font-display font-bold" style={{ fontSize: 'clamp(1.8rem, 3.5vw, 3rem)', letterSpacing: '-0.02em', color: 'var(--color-text)', marginBottom: 20, lineHeight: 1.15 }}>
+                {heading}
+              </h2>
+              {paragraphs.map((p, i) => (
+                <p key={i} style={{ color: 'var(--color-muted)', fontSize: 17, lineHeight: 1.8, marginBottom: 20 }}>{p}</p>
+              ))}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {bullets.map((b, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 16, padding: '18px 20px', borderRadius: 16, background: 'rgba(247,37,133,0.05)', border: '1px solid rgba(247,37,133,0.12)' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, background: 'rgba(247,37,133,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 3v5M7 10v1" stroke="#f72585" strokeWidth="1.8" strokeLinecap="round"/></svg>
+                  </div>
+                  <p style={{ color: '#e4e4e7', fontSize: 15, lineHeight: 1.65 }} dangerouslySetInnerHTML={{ __html: parseInline(b) }} />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          /* Full-width prose layout — alle Absätze erhalten */
+          <div style={{ maxWidth: 820 }}>
             <div style={{ width: 40, height: 4, borderRadius: 99, background: 'linear-gradient(90deg, #f72585, transparent)', marginBottom: 24 }} />
-            <h2 className="font-display font-bold" style={{ fontSize: 'clamp(1.8rem, 3.5vw, 3rem)', letterSpacing: '-0.02em', color: 'var(--color-text)', marginBottom: 20, lineHeight: 1.15 }}>
+            <h2 className="font-display font-bold" style={{ fontSize: 'clamp(1.8rem, 3.5vw, 3rem)', letterSpacing: '-0.02em', color: 'var(--color-text)', marginBottom: 28, lineHeight: 1.15 }}>
               {heading}
             </h2>
-            {prose && <p style={{ color: 'var(--color-muted)', fontSize: 17, lineHeight: 1.8, marginBottom: 32 }}>{prose}</p>}
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {(bullets.length > 0 ? bullets : section.content.split('\n').filter(l => l.trim()).slice(0, 4)).map((b, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 16, padding: '18px 20px', borderRadius: 16, background: 'rgba(247,37,133,0.05)', border: '1px solid rgba(247,37,133,0.12)' }}>
-                <div style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, background: 'rgba(247,37,133,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 3v5M7 10v1" stroke="#f72585" strokeWidth="1.8" strokeLinecap="round"/></svg>
-                </div>
-                <p style={{ color: '#e4e4e7', fontSize: 15, lineHeight: 1.65 }} dangerouslySetInnerHTML={{ __html: parseInline(b) }} />
-              </div>
+            {paragraphs.map((p, i) => (
+              <p key={i} style={{ color: 'var(--color-muted)', fontSize: 18, lineHeight: 1.85, marginBottom: 20 }}>{p}</p>
             ))}
           </div>
-        </div>
+        )}
       </div>
     </section>
   );
@@ -239,8 +269,9 @@ function ProblemSection({ section }: { section: LPSection }) {
 
 /* ── SOLUTION ───────────────────────────────────────────────── */
 function SolutionSection({ section }: { section: LPSection }) {
-  const bullets = parseBullets(section.content);
-  const prose   = section.fields['Description'] || section.fields['Beschreibung'] || parseProse(section.content);
+  const bullets    = parseBullets(section.content);
+  const paragraphs = parseParagraphs(section.fields['Description'] || section.fields['Beschreibung'] || section.content);
+  const hasBullets = bullets.length > 0;
 
   return (
     <section style={{ padding: '100px 0', position: 'relative', overflow: 'hidden' }}>
@@ -253,44 +284,52 @@ function SolutionSection({ section }: { section: LPSection }) {
         style={{ background: 'radial-gradient(ellipse 60% 50% at 80% 50%, rgba(6,200,217,0.08), transparent)' }} />
 
       <div style={{ maxWidth: 1152, margin: '0 auto', padding: '0 24px', width: '100%', position: 'relative', zIndex: 1 }}>
-        {/* Top label */}
-        <div style={{ textAlign: 'center', marginBottom: 60 }}>
-          <div style={{ width: 40, height: 4, borderRadius: 99, background: 'linear-gradient(90deg, #06c8d9, transparent)', margin: '0 auto 24px' }} />
-          <h2
-            className="font-display font-bold gradient-text-cyan"
-            style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)', letterSpacing: '-0.02em', lineHeight: 1.15 }}
-          >
-            {cleanHeading(section.heading) || section.fields['Headline'] || ''}
-          </h2>
-          {prose && (
-            <p style={{ color: 'var(--color-muted)', fontSize: 18, maxWidth: 620, margin: '20px auto 0', lineHeight: 1.75 }}>
-              {prose}
-            </p>
-          )}
-        </div>
 
-        {/* Solution items */}
-        {bullets.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20 }}>
-            {bullets.map((b, i) => (
-              <div
-                key={i}
-                className="card-glass"
-                style={{ padding: '28px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}
-              >
-                <div style={{
-                  width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-                  background: 'linear-gradient(135deg, rgba(124,92,252,0.2), rgba(6,200,217,0.15))',
-                  border: '1px solid rgba(124,92,252,0.2)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#a78bfa',
-                }}>
-                  {FEATURE_ICONS[i % FEATURE_ICONS.length]}
+        {hasBullets ? (
+          /* Centered header + grid cards */
+          <>
+            <div style={{ textAlign: 'center', marginBottom: 60 }}>
+              <div style={{ width: 40, height: 4, borderRadius: 99, background: 'linear-gradient(90deg, #06c8d9, transparent)', margin: '0 auto 24px' }} />
+              <h2 className="font-display font-bold gradient-text-cyan"
+                style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)', letterSpacing: '-0.02em', lineHeight: 1.15 }}>
+                {cleanHeading(section.heading) || section.fields['Headline'] || ''}
+              </h2>
+              {paragraphs.map((p, i) => (
+                <p key={i} style={{ color: 'var(--color-muted)', fontSize: 18, maxWidth: 620, margin: '20px auto 0', lineHeight: 1.75 }}>{p}</p>
+              ))}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20 }}>
+              {bullets.map((b, i) => (
+                <div key={i} className="card-glass" style={{ padding: '28px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div style={{
+                    width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+                    background: 'linear-gradient(135deg, rgba(124,92,252,0.2), rgba(6,200,217,0.15))',
+                    border: '1px solid rgba(124,92,252,0.2)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a78bfa',
+                  }}>
+                    {FEATURE_ICONS[i % FEATURE_ICONS.length]}
+                  </div>
+                  <p style={{ color: '#e4e4e7', fontSize: 15, lineHeight: 1.7 }}
+                     dangerouslySetInnerHTML={{ __html: parseInline(b) }} />
                 </div>
-                <p style={{ color: '#e4e4e7', fontSize: 15, lineHeight: 1.7 }}
-                   dangerouslySetInnerHTML={{ __html: parseInline(b) }} />
-              </div>
-            ))}
+              ))}
+            </div>
+          </>
+        ) : (
+          /* Full prose layout — alle Absätze, zwei-spaltig ab md */
+          <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 60, alignItems: 'flex-start' }}>
+            <div style={{ paddingTop: 8 }}>
+              <div style={{ width: 40, height: 4, borderRadius: 99, background: 'linear-gradient(90deg, #06c8d9, transparent)', marginBottom: 0 }} />
+            </div>
+            <div>
+              <h2 className="font-display font-bold gradient-text-cyan"
+                style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)', letterSpacing: '-0.02em', lineHeight: 1.15, marginBottom: 28 }}>
+                {cleanHeading(section.heading) || section.fields['Headline'] || ''}
+              </h2>
+              {paragraphs.map((p, i) => (
+                <p key={i} style={{ color: 'var(--color-muted)', fontSize: 18, lineHeight: 1.85, marginBottom: 20 }}>{p}</p>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -408,7 +447,7 @@ function VisualBreakSection({ imageUrl: _imageUrl, pageId, title }: { imageUrl?:
 /* ── CTA ────────────────────────────────────────────────────── */
 function CTASection({ section }: { section: LPSection }) {
   const heading  = cleanHeading(section.heading) || section.fields['Headline'] || section.fields['Überschrift'] || 'Jetzt loslegen';
-  const subtext  = section.fields['Subheadline'] || section.fields['Description'] || section.fields['Subtext'] || parseProse(section.content);
+  const paragraphs = parseParagraphs(section.fields['Subheadline'] || section.fields['Description'] || section.fields['Subtext'] || section.content);
   const cta1     = section.fields['Primary CTA']   || section.fields['CTA 1'] || section.fields['CTA'] || 'Jetzt starten — kostenlos';
   const cta2     = section.fields['Secondary CTA'] || section.fields['CTA 2'] || 'Demo ansehen';
 
@@ -427,7 +466,13 @@ function CTASection({ section }: { section: LPSection }) {
         <h2 className="font-display font-bold gradient-text" style={{ fontSize: 'clamp(2.5rem, 5vw, 4.5rem)', letterSpacing: '-0.03em', lineHeight: 1.05, marginBottom: 24 }}>
           {heading}
         </h2>
-        {subtext && <p style={{ color: 'var(--color-muted)', fontSize: 18, lineHeight: 1.75, marginBottom: 48 }}>{subtext}</p>}
+        {paragraphs.length > 0 && (
+          <div style={{ marginBottom: 48 }}>
+            {paragraphs.map((p, i) => (
+              <p key={i} style={{ color: 'var(--color-muted)', fontSize: 18, lineHeight: 1.75, marginBottom: i < paragraphs.length - 1 ? 16 : 0 }}>{p}</p>
+            ))}
+          </div>
+        )}
         <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
           <button className="btn-primary" style={{ fontSize: 17, padding: '18px 44px', borderRadius: 16 }}>
             {cta1}
@@ -448,10 +493,10 @@ const SECTION_LABEL_MAP: Record<string, string> = {
 };
 
 function BodySection({ section }: { section: LPSection }) {
-  const bullets = parseBullets(section.content);
-  const prose   = section.fields['Description'] || section.fields['Beschreibung'] || parseProse(section.content);
-  const raw     = section.heading ?? '';
-  const heading = cleanHeading(raw) || SECTION_LABEL_MAP[raw.toUpperCase().trim()] || section.fields['Headline'] || null;
+  const bullets    = parseBullets(section.content);
+  const paragraphs = parseParagraphs(section.fields['Description'] || section.fields['Beschreibung'] || section.content);
+  const raw        = section.heading ?? '';
+  const heading    = cleanHeading(raw) || SECTION_LABEL_MAP[raw.toUpperCase().trim()] || section.fields['Headline'] || null;
 
   return (
     <section style={{ padding: '80px 0', position: 'relative' }}>
@@ -466,7 +511,9 @@ function BodySection({ section }: { section: LPSection }) {
                 {heading}
               </h2>
             )}
-            {prose && <p style={{ color: 'var(--color-muted)', fontSize: 16, lineHeight: 1.85 }}>{prose}</p>}
+            {paragraphs.map((p, i) => (
+              <p key={i} style={{ color: 'var(--color-muted)', fontSize: 16, lineHeight: 1.85, marginBottom: 16 }}>{p}</p>
+            ))}
           </div>
           {bullets.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
