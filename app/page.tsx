@@ -403,7 +403,7 @@ function FeaturesSection() {
             <ScrollReveal key={i} delay={i * 80}>
               <div
                 className="card-glass h-full flex flex-col"
-                style={{ borderColor: `${f.color}20`, padding: '32px 28px', gap: 20 }}
+                style={{ borderColor: `${f.color}35`, padding: '32px 28px', gap: 20, background: 'rgba(16,14,36,0.85)' }}
               >
                 <div
                   className="rounded-xl flex items-center justify-center flex-shrink-0"

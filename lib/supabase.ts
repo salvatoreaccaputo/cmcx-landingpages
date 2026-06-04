@@ -103,7 +103,9 @@ function detectType(raw: string): { type: LPSection['type']; heading: string } {
   const type: LPSection['type'] =
     h.includes('problem') || h.includes('herausforderung') || h.includes('challenge') ? 'problem'  :
     h.includes('lösung')  || h.includes('solution')                                    ? 'solution' :
-    h.includes('feature') || h.includes('vorteile') || h.includes('leistung')         ? 'features' :
+    h.includes('feature') || h.includes('vorteile') || h.includes('leistung') ||
+      h.includes('benefit') || h.includes('nutzen') || h.includes('vorteil') ||
+      h.includes('warum') || h.includes('kernaussag') || h.includes('highlights')    ? 'features' :
     h.includes('cta')     || h.includes('closing')  || h.includes('jetzt') ||
       h.includes('kontakt') || h.includes('start')  || h.includes('call')             ? 'cta'      :
     h === 'hero'                                                                        ? 'hero'     :

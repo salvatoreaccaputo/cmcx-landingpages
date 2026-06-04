@@ -302,7 +302,7 @@ function SolutionSection({ section }: { section: LPSection }) {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20 }}>
               {bullets.map((b, i) => (
-                <div key={i} className="card-glass" style={{ padding: '28px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div key={i} className="card-glass" style={{ padding: '28px 24px', display: 'flex', flexDirection: 'column', gap: 16, background: 'rgba(16,14,36,0.88)' }}>
                   <div style={{
                     width: 44, height: 44, borderRadius: 12, flexShrink: 0,
                     background: 'linear-gradient(135deg, rgba(124,92,252,0.2), rgba(6,200,217,0.15))',
@@ -380,7 +380,7 @@ function FeaturesSection({ section }: { section: LPSection }) {
                 <div
                   key={i}
                   className="card"
-                  style={{ padding: '32px 28px', position: 'relative', overflow: 'hidden' }}
+                  style={{ padding: '32px 28px', position: 'relative', overflow: 'hidden', background: 'rgba(16,14,36,0.92)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', border: `1px solid ${color}28` }}
                 >
                   {/* Top accent bar */}
                   <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${color}, transparent)`, borderRadius: '20px 20px 0 0' }} />
@@ -494,49 +494,94 @@ const SECTION_LABEL_MAP: Record<string, string> = {
   'BENEFITS':     'Ihre Vorteile',
 };
 
+const BODY_ACCENT_COLORS = ['#7c5cfc', '#06c8d9', '#a78bfa', '#f72585', '#10b981', '#f59e0b'];
+
 function BodySection({ section }: { section: LPSection }) {
   const bullets    = parseBullets(section.content);
   const paragraphs = parseParagraphs(section.fields['Description'] || section.fields['Beschreibung'] || section.content);
   const raw        = section.heading ?? '';
   const heading    = cleanHeading(raw) || SECTION_LABEL_MAP[raw.toUpperCase().trim()] || section.fields['Headline'] || null;
 
+  /* ≥3 bullets → render as card grid (same visual as FeaturesSection) */
+  const useCardGrid = bullets.length >= 3;
+
   return (
     <section style={{ padding: '80px 0', position: 'relative', background: 'rgba(6,6,15,0.72)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
       <div style={{ maxWidth: 1152, margin: '0 auto', padding: '0 24px', width: '100%' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: bullets.length > 0 ? '1fr 1fr' : '1fr', gap: 60, alignItems: 'start' }}>
-          <div>
-            {heading && (
-              <h2
-                className="font-display font-bold"
-                style={{ fontSize: 'clamp(1.5rem, 3vw, 2.5rem)', letterSpacing: '-0.02em', color: 'var(--color-text)', marginBottom: 20, lineHeight: 1.2 }}
-              >
-                {heading}
-              </h2>
-            )}
-            {paragraphs.map((p, i) => (
-              <p key={i} style={{ color: 'var(--color-muted)', fontSize: 16, lineHeight: 1.85, marginBottom: 16 }}>{p}</p>
+
+        {heading && (
+          <h2
+            className="font-display font-bold"
+            style={{ fontSize: 'clamp(1.5rem, 3vw, 2.5rem)', letterSpacing: '-0.02em', color: 'var(--color-text)', marginBottom: paragraphs.length > 0 ? 16 : 40, lineHeight: 1.2 }}
+          >
+            {heading}
+          </h2>
+        )}
+        {paragraphs.map((p, i) => (
+          <p key={i} style={{ color: 'var(--color-muted)', fontSize: 16, lineHeight: 1.85, marginBottom: 16, maxWidth: 760 }}>{p}</p>
+        ))}
+
+        {useCardGrid ? (
+          /* Card grid for 3+ bullets */
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20, marginTop: paragraphs.length > 0 ? 40 : 0 }}>
+            {bullets.map((b, i) => {
+              const color = BODY_ACCENT_COLORS[i % BODY_ACCENT_COLORS.length];
+              const boldMatch = b.match(/^\*\*(.+?):\*\*\s*([\s\S]*)/);
+              const title = boldMatch ? boldMatch[1].trim() : (b.includes(':') ? b.slice(0, b.indexOf(':')).replace(/\*\*/g, '').trim() : null);
+              const desc  = boldMatch ? boldMatch[2].trim() : (b.includes(':') ? b.slice(b.indexOf(':') + 1).trim() : b);
+              return (
+                <div
+                  key={i}
+                  style={{
+                    padding: '24px 22px',
+                    borderRadius: 16,
+                    background: 'rgba(16,14,36,0.92)',
+                    border: `1px solid ${color}28`,
+                    backdropFilter: 'blur(4px)',
+                    WebkitBackdropFilter: 'blur(4px)',
+                    position: 'relative',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${color}, transparent)`, borderRadius: '16px 16px 0 0' }} />
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 10, marginBottom: 14, flexShrink: 0,
+                    background: `${color}18`, border: `1px solid ${color}30`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', color,
+                  }}>
+                    {FEATURE_ICONS[i % FEATURE_ICONS.length]}
+                  </div>
+                  {title && (
+                    <h3 className="font-display font-semibold" style={{ fontSize: 15, color: 'var(--color-text)', marginBottom: 8, letterSpacing: '-0.01em' }}>
+                      {title}
+                    </h3>
+                  )}
+                  <p style={{ color: 'var(--color-muted)', fontSize: 13, lineHeight: 1.75 }}
+                     dangerouslySetInnerHTML={{ __html: parseInline(title ? desc : b) }} />
+                </div>
+              );
+            })}
+          </div>
+        ) : bullets.length > 0 ? (
+          /* Simple bullet list for 1-2 bullets */
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: paragraphs.length > 0 ? 24 : 0 }}>
+            {bullets.map((b, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                <div style={{
+                  width: 24, height: 24, borderRadius: 6, flexShrink: 0, marginTop: 2,
+                  background: 'rgba(124,92,252,0.15)', border: '1px solid rgba(124,92,252,0.25)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                    <path d="M2 5l2.5 2.5L8 3" stroke="#7c5cfc" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <p style={{ color: '#d4d4d8', fontSize: 15, lineHeight: 1.7 }}
+                   dangerouslySetInnerHTML={{ __html: parseInline(b) }} />
+              </div>
             ))}
           </div>
-          {bullets.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {bullets.map((b, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-                  <div style={{
-                    width: 24, height: 24, borderRadius: 6, flexShrink: 0, marginTop: 2,
-                    background: 'rgba(124,92,252,0.15)', border: '1px solid rgba(124,92,252,0.25)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                      <path d="M2 5l2.5 2.5L8 3" stroke="#7c5cfc" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-                  <p style={{ color: '#d4d4d8', fontSize: 15, lineHeight: 1.7 }}
-                     dangerouslySetInnerHTML={{ __html: parseInline(b) }} />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        ) : null}
       </div>
     </section>
   );
