@@ -1,8 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import Image from 'next/image';
 import type { LandingPage } from '../../../lib/supabase';
+
+export interface CylinderGalleryHandle {
+  snapToNewest: () => void;
+}
 
 /* ── Helpers ──────────────────────────────────────────────── */
 function fallbackImg(id: string) {
@@ -139,7 +143,7 @@ const DEAD_ZONE   = 0.20;  // inner 40% of band width = neutral zone
 /* ── Main ─────────────────────────────────────────────────── */
 interface Props { pages: LandingPage[] }
 
-export default function CylinderGallery({ pages }: Props) {
+const CylinderGallery = forwardRef<CylinderGalleryHandle, Props>(function CylinderGallery({ pages }, ref) {
   if (pages.length === 0) return null;
 
   const [showGrid,  setShowGrid]  = useState(false);
@@ -156,6 +160,7 @@ export default function CylinderGallery({ pages }: Props) {
     targetVel: AUTO_SPEED,
     inside:    false,
     time:      0,
+    snapTo:    null as number | null,  // target pos for smooth jump
   });
 
   const N = pages.length;
@@ -201,14 +206,28 @@ export default function CylinderGallery({ pages }: Props) {
     const tick = (ts: number) => {
       s.time = ts * 0.001;
 
-      /* Lerp velocity towards target */
-      s.vel += (s.targetVel - s.vel) * 0.10;
-
-      s.pos += s.vel;
+      /* Smooth snap-to overrides normal scroll */
+      if (s.snapTo !== null) {
+        const diff = s.snapTo - s.pos;
+        if (Math.abs(diff) < 0.8) {
+          s.pos = s.snapTo;
+          s.snapTo = null;
+          s.vel = 0;
+          s.targetVel = AUTO_SPEED;
+        } else {
+          s.pos += diff * 0.12;
+          s.vel = 0;
+        }
+      } else {
+        /* Lerp velocity towards target */
+        s.vel += (s.targetVel - s.vel) * 0.10;
+        s.pos += s.vel;
+      }
 
       /* Seamless infinite loop */
       if (s.pos >= loopLen)  s.pos -= loopLen;
       if (s.pos < 0)         s.pos += loopLen;
+
 
       track.style.transform = `translateX(${-s.pos}px)`;
 
@@ -237,6 +256,25 @@ export default function CylinderGallery({ pages }: Props) {
     };
   }, [showGrid, N, loopLen]);
 
+  /* Expose snapToNewest to parent via ref */
+  useImperativeHandle(ref, () => ({ snapToNewest }));
+
+  /* Smooth-scroll band so that card 0 (newest) is centered */
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  function snapToNewest() {
+    const wrap = wrapRef.current;
+    if (!wrap || showGrid) return;
+    const viewCenterX = wrap.getBoundingClientRect().width / 2;
+    // centerPos formula: s.pos + viewCenterX - 80
+    // For card 0 centered: centerPos = k * loopLen (nearest k to current)
+    const currentCenterPos = st.current.pos + viewCenterX - 80;
+    const k = Math.round(currentCenterPos / loopLen);
+    const targetPos = k * loopLen - viewCenterX + 80;
+    // Normalize into [0, loopLen)
+    st.current.snapTo = ((targetPos % loopLen) + loopLen) % loopLen;
+    st.current.targetVel = 0;
+  };
+
   return (
     <div style={{ position: 'relative', width: '100%' }}>
 
@@ -255,7 +293,7 @@ export default function CylinderGallery({ pages }: Props) {
           {showGrid ? (
             <><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M2 4h10M2 10h10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>Band-Ansicht</>
           ) : (
-            <><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><rect x="8" y="1" width="5" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><rect x="1" y="8" width="5" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><rect x="8" y="8" width="5" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.4"/></svg>Alle {pages.length} Pages</>
+            <><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><rect x="8" y="1" width="5" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><rect x="1" y="8" width="5" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><rect x="8" y="8" width="5" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.4"/></svg>Alle {pages.length} Seiten</>
           )}
         </button>
       </div>
@@ -298,4 +336,6 @@ export default function CylinderGallery({ pages }: Props) {
       )}
     </div>
   );
-}
+});
+
+export default CylinderGallery;

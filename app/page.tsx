@@ -5,7 +5,7 @@ import ParallaxHero from './components/ui/ParallaxHero';
 import Marquee from './components/ui/Marquee';
 import ScrollReveal from './components/ui/ScrollReveal';
 import StatsSection from './components/ui/StatsSection';
-import CylinderGallery from './components/ui/CylinderGallery';
+import GallerySection from './components/ui/GallerySection';
 
 export const revalidate = 10;
 
@@ -277,10 +277,13 @@ export default async function HomePage() {
       {/* ── Marquee ─────────────────────────────────────────── */}
       <Marquee />
 
+      {/* ── Dark content backdrop — readable over RYZE bg ─── */}
+      <div style={{ background: 'rgba(6,6,15,0.78)', backdropFilter: 'blur(2px)', WebkitBackdropFilter: 'blur(2px)' }}>
+
       {/* ── Main Content ────────────────────────────────────── */}
       <main
         id="pages"
-        style={{ maxWidth: 1152, margin: '0 auto', padding: '80px 24px', width: '100%' }}
+        style={{ maxWidth: 1152, margin: '0 auto', padding: '80px 24px', width: '100%', position: 'relative' }}
       >
 
         {/* Stats */}
@@ -308,25 +311,15 @@ export default async function HomePage() {
         {/* 3D Cylinder Navigation */}
         {pages.length > 0 && (
           <ScrollReveal className="mb-4">
-            <div className="text-center mb-10">
-              <div className="badge inline-flex mb-4">
-                <span className="pulse-dot w-1.5 h-1.5 rounded-full bg-violet-400 inline-block" />
-                {pages.length} {pages.length === 1 ? 'Page' : 'Pages'} verfügbar
-              </div>
-              <h2
-                className="font-display font-bold gradient-text"
-                style={{ fontSize: 'clamp(1.8rem, 3.5vw, 3rem)', letterSpacing: '-0.02em', lineHeight: 1.15 }}
-              >
-                Pages entdecken
-              </h2>
-            </div>
-            <CylinderGallery pages={pages} />
+            <GallerySection pages={pages} />
           </ScrollReveal>
         )}
       </main>
 
       {/* ── Features Section ────────────────────────────────── */}
       <FeaturesSection />
+
+      </div>{/* end dark content backdrop */}
     </>
   );
 }
@@ -382,8 +375,14 @@ const FEATURES = [
 function FeaturesSection() {
   return (
     <section
-      className="relative overflow-hidden py-24"
-      style={{ background: 'var(--color-surface)' }}
+      className="relative overflow-hidden"
+      style={{
+        padding: '96px 0 112px',
+        background: 'rgba(13,13,26,0.82)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        borderTop: '1px solid rgba(124,92,252,0.1)',
+      }}
     >
       {/* Glow */}
       <div
@@ -393,42 +392,42 @@ function FeaturesSection() {
         }}
       />
 
-      <div style={{ maxWidth: 1152, margin: '0 auto', padding: '0 24px', width: '100%' }}>
-        <ScrollReveal className="text-center mb-14">
-          <div className="badge mb-4 mx-auto inline-flex">Platform Features</div>
+      <div style={{ maxWidth: 1024, margin: '0 auto', padding: '0 48px', width: '100%' }}>
+        <ScrollReveal className="text-center mb-16">
+          <div className="badge mb-6 mx-auto inline-flex">Platform Features</div>
           <h2
-            className="font-display font-bold leading-tight"
-            style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', letterSpacing: '-0.02em', color: 'var(--color-text)' }}
+            className="font-display font-black leading-tight"
+            style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', letterSpacing: '-0.02em', color: '#ffffff' }}
           >
-            Automatisierung auf{' '}
-            <span className="gradient-text-cyan">nächstem Level</span>
+            Automatisierung auf nächstem Level
           </h2>
         </ScrollReveal>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {FEATURES.map((f, i) => (
             <ScrollReveal key={i} delay={i * 80}>
               <div
-                className="card-glass p-7 h-full flex flex-col gap-4"
-                style={{ borderColor: `${f.color}20` }}
+                className="card-glass h-full flex flex-col"
+                style={{ borderColor: `${f.color}20`, padding: '32px 28px', gap: 20 }}
               >
                 <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                  className="rounded-xl flex items-center justify-center flex-shrink-0"
                   style={{
+                    width: 52, height: 52,
                     background: `${f.color}12`,
                     border: `1px solid ${f.color}25`,
                   }}
                 >
                   {f.icon}
                 </div>
-                <div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <h3
-                    className="font-display font-semibold text-[15px] mb-2"
-                    style={{ color: 'var(--color-text)', letterSpacing: '-0.01em' }}
+                    className="font-display font-semibold"
+                    style={{ fontSize: '16px', color: 'var(--color-text)', letterSpacing: '-0.01em', lineHeight: 1.3 }}
                   >
                     {f.title}
                   </h3>
-                  <p className="text-[13px] leading-relaxed" style={{ color: 'var(--color-muted)' }}>
+                  <p style={{ fontSize: '14px', lineHeight: 1.7, color: 'var(--color-muted)' }}>
                     {f.desc}
                   </p>
                 </div>

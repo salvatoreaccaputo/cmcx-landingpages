@@ -9,73 +9,54 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="de">
-      <body className="noise-overlay">
+      <body>
 
         {/* ── Top nav ──────────────────────────────────────────── */}
         <nav
-          className="fixed top-0 left-0 right-0 z-50 h-16"
+          className="fixed top-0 left-0 right-0 z-50 h-20"
           style={{
-            background: 'rgba(6,6,15,0.7)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            borderBottom: '1px solid rgba(124,92,252,0.1)',
+            background: 'linear-gradient(to bottom, rgba(6,6,15,0.82) 0%, rgba(6,6,15,0.55) 60%, transparent 100%)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
           }}
         >
-          <div className="max-w-6xl mx-auto h-full px-6 flex items-center justify-between">
+          <div className="max-w-6xl mx-auto h-full flex items-center justify-between" style={{ paddingLeft: 72, paddingRight: 48 }}>
             {/* Logo */}
             <a href="/" className="flex items-center gap-3 no-underline group">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/ryze-weiss.png"
+                alt="RYZE"
+                style={{ height: 22, width: 'auto', display: 'block', opacity: 0.95 }}
+              />
               <div
-                className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-white text-sm relative overflow-hidden"
-                style={{ background: 'linear-gradient(135deg, #7c5cfc, #a855f7)' }}
-              >
-                <span className="relative z-10">C</span>
-                <div
-                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                  style={{ background: 'linear-gradient(135deg, #a855f7, #06c8d9)' }}
-                />
-              </div>
+                className="h-4 w-px"
+                style={{ background: 'rgba(255,255,255,0.2)' }}
+              />
               <span
-                className="font-display font-semibold text-[15px]"
-                style={{ color: 'var(--color-text)', letterSpacing: '-0.01em' }}
+                className="font-display text-[13px] font-medium tracking-wide"
+                style={{ color: 'rgba(255,255,255,0.65)', letterSpacing: '0.05em' }}
               >
-                CMCx{' '}
-                <span style={{ color: 'var(--color-muted)', fontWeight: 400 }}>Pages</span>
+                CMCX · Landingpage
               </span>
             </a>
-
-            {/* Nav links */}
-            <div className="flex items-center gap-6">
-              <a
-                href="/"
-                className="nav-link text-[13px] font-medium no-underline transition-colors duration-200"
-              >
-                Alle Pages
-              </a>
-              <a
-                href="http://localhost:3000"
-                target="_blank"
-                rel="noreferrer"
-                className="btn-primary"
-                style={{ padding: '8px 20px', fontSize: '13px', borderRadius: '10px' }}
-              >
-                Tool öffnen
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <path d="M2 10L10 2M10 2H4M10 2v6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </a>
-            </div>
           </div>
         </nav>
 
         {/* ── Content ──────────────────────────────────────────── */}
-        <div style={{ paddingTop: 64, width: '100%' }}>
+        <div style={{ width: '100%' }}>
           {children}
         </div>
 
         {/* ── Footer ───────────────────────────────────────────── */}
         <footer
           className="relative mt-24 overflow-hidden"
-          style={{ borderTop: '1px solid rgba(124,92,252,0.1)' }}
+          style={{
+            borderTop: '1px solid rgba(124,92,252,0.12)',
+            background: 'rgba(6,6,15,0.82)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+          }}
         >
           {/* Footer glow */}
           <div

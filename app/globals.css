@@ -1,18 +1,18 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700&family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@300;400;500;600&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans:    'Inter', system-ui, sans-serif;
-  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-display: 'Barlow', system-ui, sans-serif;
 
-  /* Core palette — Stitch-inspired dark */
+  /* Core palette — RYZE-inspired dark */
   --color-bg:        #06060f;
   --color-surface:   #0d0d1a;
   --color-surface2:  #12122a;
   --color-border:    rgba(120,100,255,0.12);
   --color-border2:   rgba(255,255,255,0.06);
-  --color-text:      #f0f0ff;
-  --color-muted:     #8888aa;
+  --color-text:      #ffffff;
+  --color-muted:     rgba(255,255,255,0.55);
   --color-accent:    #7c5cfc;
   --color-accent2:   #a78bfa;
   --color-cyan:      #06c8d9;
@@ -41,23 +41,30 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  position: relative;
+}
+
+/* ── Fixed background image — stays put while content scrolls ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: url('/ryzedigital_Blur.jpg');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
 }
 
 /* ── Fonts ──────────────────────────────────────────────────── */
 .font-display { font-family: var(--font-display); }
 
-/* ── Gradient text ──────────────────────────────────────────── */
+/* ── Headline text — RYZE: reines Weiß, keine Gradienten ────── */
 .gradient-text {
-  background: linear-gradient(135deg, #fff 0%, #a78bfa 50%, #7c5cfc 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #ffffff;
 }
 .gradient-text-cyan {
-  background: linear-gradient(135deg, #a78bfa 0%, #06c8d9 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #ffffff;
 }
 
 /* ── Glow effects ───────────────────────────────────────────── */
@@ -338,25 +345,26 @@ body {
 
 /* ── Scroll indicator ───────────────────────────────────────── */
 @keyframes scroll-bounce {
-  0%, 100% { transform: translateY(0); opacity: 0.8; }
-  50%       { transform: translateY(10px); opacity: 0.2; }
+  0%, 100% { transform: translateX(-50%) translateY(0); opacity: 1; }
+  50%       { transform: translateX(-50%) translateY(10px); opacity: 0.3; }
 }
 .scroll-indicator {
-  width: 24px; height: 40px;
-  border: 2px solid rgba(124,92,252,0.4);
-  border-radius: 12px;
+  width: 26px; height: 42px;
+  border: 2px solid rgba(255,255,255,0.7);
+  border-radius: 13px;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 0 12px rgba(255,255,255,0.15);
 }
 .scroll-indicator::after {
   content: '';
   position: absolute;
   top: 6px; left: 50%;
   transform: translateX(-50%);
-  width: 4px; height: 8px;
-  background: #7c5cfc;
+  width: 4px; height: 9px;
+  background: #ffffff;
   border-radius: 2px;
-  animation: scroll-bounce 1.8s ease-in-out infinite;
+  animation: scroll-bounce 1.6s ease-in-out infinite;
 }
 
 /* ── Scan lines ─────────────────────────────────────────────── */

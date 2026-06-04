@@ -14,18 +14,20 @@ export default function Marquee() {
     <div
       className="relative overflow-hidden py-5 border-y"
       style={{
-        borderColor: 'rgba(124,92,252,0.12)',
-        background: 'rgba(124,92,252,0.03)',
+        borderColor: 'rgba(124,92,252,0.15)',
+        background: 'rgba(6,6,15,0.65)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
       }}
     >
       {/* Fade edges */}
       <div
         className="absolute inset-y-0 left-0 z-10 w-24 pointer-events-none"
-        style={{ background: 'linear-gradient(to right, var(--color-bg), transparent)' }}
+        style={{ background: 'linear-gradient(to right, rgba(6,6,15,0.85), transparent)' }}
       />
       <div
         className="absolute inset-y-0 right-0 z-10 w-24 pointer-events-none"
-        style={{ background: 'linear-gradient(to left, var(--color-bg), transparent)' }}
+        style={{ background: 'linear-gradient(to left, rgba(6,6,15,0.85), transparent)' }}
       />
 
       <div className="marquee-track" aria-hidden>
