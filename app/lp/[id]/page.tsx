@@ -145,9 +145,9 @@ function HeroSection({ section, imageUrl, pageId, pageTitle }: { section: LPSect
   const ctaLabel = section.fields['Primary CTA'] || section.fields['CTA'] || section.fields['Button'] || ctaFromContent || 'Jetzt starten';
 
   return (
-    <section style={{ position: 'relative', overflow: 'hidden', background: 'var(--color-bg)' }}>
+    <section style={{ position: 'relative', background: 'transparent' }}>
 
-      {/* ── Cinematic Image Banner (top) ── */}
+      {/* ── Cinematic Image Banner — scrolls away, reveals RYZE bg below ── */}
       <div style={{ position: 'relative', width: '100%', height: 'clamp(320px, 52vh, 580px)', overflow: 'hidden' }}>
         <Image
           src={heroImg}
@@ -158,16 +158,17 @@ function HeroSection({ section, imageUrl, pageId, pageTitle }: { section: LPSect
           style={{ objectPosition: 'center 30%' }}
           priority
         />
-        {/* Top fade: navbar blends into image */}
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(7,5,15,0.55) 0%, transparent 40%, transparent 55%, var(--color-bg) 100%)' }} />
+        {/* Top fade: navbar blends into image, bottom fade into RYZE bg */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(7,5,15,0.55) 0%, transparent 30%, transparent 45%, rgba(6,6,15,0.65) 100%)' }} />
         {/* Subtle purple tint */}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(124,92,252,0.12), transparent 60%)', pointerEvents: 'none' }} />
         {/* Grid overlay */}
         <div className="absolute inset-0 grid-bg" style={{ opacity: 0.18 }} />
       </div>
 
-      {/* ── Text content (below image, no gap) ── */}
-      <div style={{ position: 'relative', zIndex: 1, maxWidth: 1152, margin: '0 auto', padding: '52px 24px 80px', width: '100%' }}>
+      {/* ── Text content (below image, RYZE bg shows through) ── */}
+      <div style={{ position: 'relative', zIndex: 1, maxWidth: '100%', padding: '0', background: 'linear-gradient(to bottom, rgba(6,6,15,0.72) 0%, rgba(6,6,15,0.45) 50%, rgba(6,6,15,0.18) 100%)' }}>
+      <div style={{ maxWidth: 1152, margin: '0 auto', padding: '52px 24px 80px', width: '100%' }}>
 
         {/* Glowing accent line connecting image to text */}
         <div style={{ width: 80, height: 3, marginBottom: 28, borderRadius: 99, background: 'linear-gradient(90deg, #7c5cfc, #06c8d9)', boxShadow: '0 0 24px rgba(124,92,252,0.8)' }} />
@@ -208,6 +209,7 @@ function HeroSection({ section, imageUrl, pageId, pageTitle }: { section: LPSect
           </div>
         </div>
       </div>
+      </div>
 
       {/* Bottom ambient glow */}
       <div className="orb orb-cyan absolute pointer-events-none" style={{ width: 400, height: 400, bottom: '-20%', right: '-5%', opacity: 0.18 }} />
@@ -223,7 +225,7 @@ function ProblemSection({ section }: { section: LPSection }) {
   const hasBullets = bullets.length > 0;
 
   return (
-    <section style={{ padding: '100px 0', background: 'var(--color-bg)', position: 'relative', overflow: 'hidden' }}>
+    <section style={{ padding: '100px 0', background: 'linear-gradient(to bottom, rgba(6,6,15,0.45) 0%, rgba(6,6,15,0.72) 12%)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', position: 'relative', overflow: 'hidden' }}>
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 60% 50% at 20% 50%, rgba(247,37,133,0.06), transparent)' }} />
       <div style={{ maxWidth: 1152, margin: '0 auto', padding: '0 24px', width: '100%' }}>
 
@@ -274,7 +276,7 @@ function SolutionSection({ section }: { section: LPSection }) {
   const hasBullets = bullets.length > 0;
 
   return (
-    <section style={{ padding: '100px 0', position: 'relative', overflow: 'hidden' }}>
+    <section style={{ padding: '100px 0', position: 'relative', overflow: 'hidden', background: 'rgba(6,6,15,0.72)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
       {/* Gradient bg */}
       <div className="absolute inset-0" style={{
         background: 'linear-gradient(135deg, rgba(124,92,252,0.07) 0%, rgba(6,200,217,0.04) 100%)',
@@ -344,7 +346,7 @@ function FeaturesSection({ section }: { section: LPSection }) {
   const ACCENT_COLORS = ['#7c5cfc', '#06c8d9', '#a78bfa', '#f72585', '#10b981', '#f59e0b'];
 
   return (
-    <section style={{ padding: '100px 0', background: 'var(--color-bg)', position: 'relative', overflow: 'hidden' }}>
+    <section style={{ padding: '100px 0', background: 'rgba(6,6,15,0.72)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', position: 'relative', overflow: 'hidden' }}>
       <div className="absolute inset-0 pointer-events-none"
         style={{ background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(124,92,252,0.07), transparent)' }} />
 
@@ -426,8 +428,8 @@ function VisualBreakSection({ imageUrl: _imageUrl, pageId, title }: { imageUrl?:
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.55 }}
         />
         {/* Gradient overlays */}
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, var(--color-bg) 0%, transparent 25%, transparent 75%, var(--color-bg) 100%)' }} />
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, var(--color-bg) 0%, transparent 30%, transparent 70%, var(--color-bg) 100%)' }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(6,6,15,0.7) 0%, transparent 25%, transparent 75%, rgba(6,6,15,0.7) 100%)' }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(6,6,15,0.7) 0%, transparent 30%, transparent 70%, rgba(6,6,15,0.7) 100%)' }} />
         {/* Center overlay text */}
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, textAlign: 'center', padding: '0 24px' }}>
           <div style={{ width: 60, height: 2, background: 'linear-gradient(90deg, transparent, #7c5cfc, #06c8d9, transparent)', borderRadius: 99, boxShadow: '0 0 16px rgba(124,92,252,0.8)' }} />
@@ -452,10 +454,10 @@ function CTASection({ section }: { section: LPSection }) {
   const cta2     = section.fields['Secondary CTA'] || section.fields['CTA 2'] || 'Demo ansehen';
 
   return (
-    <section style={{ padding: '120px 24px', position: 'relative', overflow: 'hidden', textAlign: 'center' }}>
+    <section style={{ padding: '120px 24px', position: 'relative', overflow: 'hidden', textAlign: 'center', background: 'rgba(6,6,15,0.72)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
       <div className="absolute inset-0">
-        <div className="orb orb-purple absolute" style={{ width: 800, height: 800, top: '-30%', left: '50%', transform: 'translateX(-50%)', opacity: 0.5 }} />
-        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 80% at 50% 50%, transparent 30%, var(--color-bg) 100%)' }} />
+        <div className="orb orb-purple absolute" style={{ width: 800, height: 800, top: '-30%', left: '50%', transform: 'translateX(-50%)', opacity: 0.35 }} />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 80% at 50% 50%, transparent 30%, rgba(6,6,15,0.4) 100%)' }} />
       </div>
       <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 300, height: 2, background: 'linear-gradient(90deg, transparent, #7c5cfc, #06c8d9, transparent)', boxShadow: '0 0 20px rgba(124,92,252,0.8)' }} />
       <div style={{ position: 'relative', zIndex: 1, maxWidth: 700, margin: '0 auto' }}>
@@ -499,7 +501,7 @@ function BodySection({ section }: { section: LPSection }) {
   const heading    = cleanHeading(raw) || SECTION_LABEL_MAP[raw.toUpperCase().trim()] || section.fields['Headline'] || null;
 
   return (
-    <section style={{ padding: '80px 0', position: 'relative' }}>
+    <section style={{ padding: '80px 0', position: 'relative', background: 'rgba(6,6,15,0.72)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
       <div style={{ maxWidth: 1152, margin: '0 auto', padding: '0 24px', width: '100%' }}>
         <div style={{ display: 'grid', gridTemplateColumns: bullets.length > 0 ? '1fr 1fr' : '1fr', gap: 60, alignItems: 'start' }}>
           <div>
@@ -552,7 +554,7 @@ export default async function LPPage({ params }: { params: Promise<{ id: string 
   const hasStructure = sections.length > 1;
 
   return (
-    <div style={{ background: 'var(--color-bg)', minHeight: '100dvh' }}>
+    <div style={{ minHeight: '100dvh' }}>
 
       {/* ── Sections ─────────────────────────────────────────── */}
       {hasStructure ? (() => {
@@ -602,7 +604,7 @@ export default async function LPPage({ params }: { params: Promise<{ id: string 
       )}
 
       {/* ── Back bar ─────────────────────────────────────────── */}
-      <div style={{ padding: '48px 24px 80px', maxWidth: 1152, margin: '0 auto' }}>
+      <div style={{ padding: '48px 24px 80px', maxWidth: 1152, margin: '0 auto', background: 'rgba(6,6,15,0.72)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}>
         <div
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',

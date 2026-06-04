@@ -277,9 +277,6 @@ export default async function HomePage() {
       {/* ── Marquee ─────────────────────────────────────────── */}
       <Marquee />
 
-      {/* ── Dark content backdrop — readable over RYZE bg ─── */}
-      <div style={{ background: 'rgba(6,6,15,0.78)', backdropFilter: 'blur(2px)', WebkitBackdropFilter: 'blur(2px)' }}>
-
       {/* ── Main Content ────────────────────────────────────── */}
       <main
         id="pages"
@@ -318,8 +315,6 @@ export default async function HomePage() {
 
       {/* ── Features Section ────────────────────────────────── */}
       <FeaturesSection />
-
-      </div>{/* end dark content backdrop */}
     </>
   );
 }
@@ -378,10 +373,10 @@ function FeaturesSection() {
       className="relative overflow-hidden"
       style={{
         padding: '96px 0 112px',
-        background: 'rgba(13,13,26,0.82)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        borderTop: '1px solid rgba(124,92,252,0.1)',
+        background: 'rgba(6,6,15,0.45)',
+        backdropFilter: 'blur(4px)',
+        WebkitBackdropFilter: 'blur(4px)',
+        borderTop: '1px solid rgba(124,92,252,0.08)',
       }}
     >
       {/* Glow */}
