@@ -27,9 +27,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <img
                 src="/ryze-weiss.png"
                 alt="RYZE"
-                width={88}
                 height={22}
-                style={{ height: 22, width: 88, display: 'block', opacity: 0.95, flexShrink: 0 }}
+                style={{ height: 22, width: 'auto', minWidth: 80, display: 'block', opacity: 0.95, flexShrink: 0 }}
               />
               <div
                 className="h-4 w-px flex-shrink-0"
