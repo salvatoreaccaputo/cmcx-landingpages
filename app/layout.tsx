@@ -22,20 +22,27 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           <div className="max-w-6xl mx-auto h-full flex items-center justify-between" style={{ paddingLeft: 72, paddingRight: 48 }}>
             {/* Logo */}
-            <a href="/" className="flex items-center gap-3 no-underline group">
+            <a href="/" className="flex items-center gap-3 no-underline group" style={{ whiteSpace: 'nowrap' }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/ryze-weiss.png"
                 alt="RYZE"
-                style={{ height: 22, width: 'auto', display: 'block', opacity: 0.95 }}
+                width={88}
+                height={22}
+                style={{ height: 22, width: 88, display: 'block', opacity: 0.95, flexShrink: 0 }}
               />
               <div
-                className="h-4 w-px"
+                className="h-4 w-px flex-shrink-0"
                 style={{ background: 'rgba(255,255,255,0.2)' }}
               />
               <span
-                className="font-display text-[13px] font-medium tracking-wide"
-                style={{ color: 'rgba(255,255,255,0.65)', letterSpacing: '0.05em' }}
+                className="text-[13px] font-medium"
+                style={{
+                  color: 'rgba(255,255,255,0.65)',
+                  letterSpacing: '0.05em',
+                  fontFamily: 'system-ui, sans-serif',
+                  whiteSpace: 'nowrap',
+                }}
               >
                 CMCX · Landingpage
               </span>
