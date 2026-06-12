@@ -280,7 +280,7 @@ export default async function HomePage() {
       {/* ── Main Content ────────────────────────────────────── */}
       <main
         id="pages"
-        style={{ maxWidth: 1152, margin: '0 auto', padding: '80px 24px', width: '100%', position: 'relative' }}
+        style={{ maxWidth: 1152, margin: '0 auto', padding: '120px 24px 80px', width: '100%', position: 'relative' }}
       >
 
         {/* Stats */}
@@ -312,6 +312,8 @@ export default async function HomePage() {
           </ScrollReveal>
         )}
       </main>
+
+      <div style={{ height: 64 }} />
 
       {/* ── Features Section ────────────────────────────────── */}
       <FeaturesSection />
