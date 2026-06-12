@@ -374,7 +374,7 @@ function FeaturesSection() {
     <section
       className="relative overflow-hidden"
       style={{
-        padding: '96px 0 112px',
+        padding: '160px 0 112px',
         background: 'rgba(6,6,15,0.45)',
         backdropFilter: 'blur(4px)',
         WebkitBackdropFilter: 'blur(4px)',
