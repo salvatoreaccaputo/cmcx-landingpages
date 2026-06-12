@@ -85,26 +85,38 @@ export default function ParallaxHero() {
         className="relative z-10 text-center px-6"
         style={{ maxWidth: 900, willChange: 'transform, opacity' }}
       >
-        {/* Eyebrow label — RYZE style */}
-        <p
-          className="font-display font-semibold uppercase tracking-[0.18em]"
-          style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)', letterSpacing: '0.18em', marginBottom: 64 }}
-        >
-          KI-generierte Landing Pages · Powered by RYZE
-        </p>
-
         {/* Logo — COP composite */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/cop_ryze_logo_composite01.png"
           alt="RYZE COP – Content Orchestration Platform"
-          style={{ height: 'clamp(140px, 22vw, 220px)', width: 'auto', display: 'block', margin: '0 auto 64px' }}
+          style={{ height: 'clamp(140px, 22vw, 220px)', width: 'auto', display: 'block', margin: '0 auto 48px' }}
         />
 
-        {/* Subline — same style as eyebrow */}
+        {/* Headline */}
+        <h1
+          className="font-display font-bold uppercase tracking-[0.12em]"
+          style={{
+            fontSize: 'clamp(18px, 2.5vw, 24px)',
+            color: 'rgba(255,255,255,0.7)',
+            letterSpacing: '0.12em',
+            lineHeight: 1.4,
+            marginBottom: 16,
+          }}
+        >
+          KI-generierte Landing Pages · Powered by RYZE
+        </h1>
+
+        {/* Subline */}
         <p
-          className="font-display font-semibold uppercase tracking-[0.18em]"
-          style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)', letterSpacing: '0.18em', whiteSpace: 'nowrap', marginBottom: 48 }}
+          className="font-display font-medium tracking-[0.06em]"
+          style={{
+            fontSize: 'clamp(14px, 1.8vw, 18px)',
+            color: 'rgba(255,255,255,0.4)',
+            letterSpacing: '0.06em',
+            lineHeight: 1.5,
+            marginBottom: 48,
+          }}
         >
           Jede Seite vollautomatisch aus einer Idee — kein Template, kein manuelles Schreiben.
         </p>
