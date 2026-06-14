@@ -374,7 +374,7 @@ function FeaturesSection() {
     <section
       className="relative overflow-hidden"
       style={{
-        padding: '160px 0 112px',
+        padding: '80px 0 112px',
         background: 'rgba(6,6,15,0.45)',
         backdropFilter: 'blur(4px)',
         WebkitBackdropFilter: 'blur(4px)',
@@ -390,7 +390,7 @@ function FeaturesSection() {
       />
 
       <div style={{ maxWidth: 1024, margin: '0 auto', padding: '0 48px', width: '100%' }}>
-        <ScrollReveal className="text-center mb-16">
+        <ScrollReveal className="text-center mb-28">
           <div className="badge mb-6 mx-auto inline-flex">Platform Features</div>
           <h2
             className="font-display font-black leading-tight"
