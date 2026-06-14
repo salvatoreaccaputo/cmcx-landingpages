@@ -101,10 +101,12 @@ function detectType(raw: string): { type: LPSection['type']; heading: string } {
   /* Legacy: generic label matching */
   const h = raw.toLowerCase();
   const type: LPSection['type'] =
-    h.includes('problem') || h.includes('herausforderung') || h.includes('challenge') ? 'problem'  :
+    h.includes('problem') || h.includes('herausforderung') || h.includes('challenge') ||
+      h.includes('angst') || h.includes('abfall') || h.includes('risiko') ||
+      h.includes('verlust') || h.includes('gefahr') || h.includes('schwierigkeit')   ? 'problem'  :
     h.includes('lösung')  || h.includes('solution')                                    ? 'solution' :
-    h.includes('feature') || h.includes('vorteile') || h.includes('leistung') ||
-      h.includes('benefit') || h.includes('nutzen') || h.includes('vorteil') ||
+    h.includes('feature') || h.includes('vorteile') || /\bleistung(en)?\b/.test(h) ||
+      h.includes('benefit') || h.includes('nutzen') || /\bvorteil\b/.test(h) ||
       h.includes('warum') || h.includes('kernaussag') || h.includes('highlights')    ? 'features' :
     h.includes('cta')     || h.includes('closing')  || h.includes('jetzt') ||
       h.includes('kontakt') || h.includes('start')  || h.includes('call')             ? 'cta'      :
