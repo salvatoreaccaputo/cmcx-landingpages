@@ -390,15 +390,17 @@ function FeaturesSection() {
       />
 
       <div style={{ maxWidth: 1024, margin: '0 auto', padding: '0 48px', width: '100%' }}>
-        <ScrollReveal className="text-center mb-28">
-          <div className="badge mb-6 mx-auto inline-flex">Platform Features</div>
-          <h2
-            className="font-display font-black leading-tight"
-            style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', letterSpacing: '-0.02em', color: '#ffffff' }}
-          >
-            Automatisierung auf nächstem Level
-          </h2>
-        </ScrollReveal>
+        <div style={{ marginBottom: 96 }}>
+          <ScrollReveal className="text-center">
+            <div className="badge mb-6 mx-auto inline-flex">Platform Features</div>
+            <h2
+              className="font-display font-black leading-tight"
+              style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', letterSpacing: '-0.02em', color: '#ffffff' }}
+            >
+              Automatisierung auf nächstem Level
+            </h2>
+          </ScrollReveal>
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {FEATURES.map((f, i) => (
