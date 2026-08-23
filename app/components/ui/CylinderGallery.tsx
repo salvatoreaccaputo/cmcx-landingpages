@@ -3,6 +3,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import Image from 'next/image';
 import type { LandingPage } from '../../../lib/supabase';
+import { contentLanguage, LANDING_COPY } from '../../../lib/i18n';
 
 export interface CylinderGalleryHandle {
   snapToNewest: () => void;
@@ -26,6 +27,7 @@ function displayTitle(page: LandingPage): string {
 /* ── BandCard ─────────────────────────────────────────────── */
 function BandCard({ page, active, isNewest }: { page: LandingPage; active: boolean; isNewest: boolean }) {
   const [src, setSrc] = useState<string>(page.image_url || fallbackImg(page.id));
+  const copy = LANDING_COPY[contentLanguage(page.language)];
 
   /* Neuester Artikel: goldener Rahmen + Glow */
   const newestBorder  = '1.5px solid rgba(251,191,36,0.75)';
@@ -62,7 +64,7 @@ function BandCard({ page, active, isNewest }: { page: LandingPage; active: boole
           letterSpacing: '0.1em', textTransform: 'uppercase',
           boxShadow: '0 2px 8px rgba(251,191,36,0.5)',
         }}>
-          ✦ Neu
+          ✦ {copy.new}
         </div>
       )}
 
@@ -86,7 +88,7 @@ function BandCard({ page, active, isNewest }: { page: LandingPage; active: boole
           {displayTitle(page)}
         </p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: isNewest ? '#fbbf24' : active ? '#c4b5fd' : '#7c5cfc', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'color 0.2s' }}>
-          Lesen
+          {copy.read}
           <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1.5 4.5h6M5 2l2.5 2.5L5 7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </div>
       </div>
@@ -97,6 +99,7 @@ function BandCard({ page, active, isNewest }: { page: LandingPage; active: boole
 /* ── GridCard ─────────────────────────────────────────────── */
 function GridCard({ page, isNewest }: { page: LandingPage; isNewest: boolean }) {
   const [src, setSrc] = useState<string>(page.image_url || fallbackImg(page.id));
+  const copy = LANDING_COPY[contentLanguage(page.language)];
   return (
     <a href={`/lp/${page.id}`}
       style={{
@@ -111,7 +114,7 @@ function GridCard({ page, isNewest }: { page: LandingPage; isNewest: boolean }) 
       onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = ''; if (!isNewest) { el.style.borderColor = 'rgba(124,92,252,0.18)'; el.style.boxShadow = ''; } }}>
       {isNewest && (
         <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 10, padding: '3px 8px', borderRadius: 99, background: 'linear-gradient(135deg, #f59e0b, #fbbf24)', color: '#1a0a00', fontSize: 9, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase', boxShadow: '0 2px 8px rgba(251,191,36,0.5)' }}>
-          ✦ Neu
+          ✦ {copy.new}
         </div>
       )}
       <div style={{ position: 'relative', height: 140, overflow: 'hidden', flexShrink: 0 }}>
@@ -125,7 +128,7 @@ function GridCard({ page, isNewest }: { page: LandingPage; isNewest: boolean }) 
       <div style={{ padding: '12px 14px 14px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 8 }}>
         <p style={{ color: '#eeeeff', fontWeight: 700, fontSize: 12, lineHeight: 1.45, fontFamily: 'var(--font-display)', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', margin: 0 }}>{displayTitle(page)}</p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: isNewest ? '#fbbf24' : '#7c5cfc', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-          Lesen <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1.5 4.5h6M5 2l2.5 2.5L5 7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          {copy.read} <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><path d="M1.5 4.5h6M5 2l2.5 2.5L5 7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </div>
       </div>
     </a>

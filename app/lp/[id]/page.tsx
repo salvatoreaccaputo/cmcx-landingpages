@@ -4,6 +4,7 @@ import React from 'react';
 import { getLandingPage, getLandingPages, parseLandingPage } from '../../../lib/supabase';
 import type { LPSection } from '../../../lib/supabase';
 import type { Metadata } from 'next';
+import { contentLanguage, LANDING_COPY } from '../../../lib/i18n';
 
 /* Deterministischer Seed → immer dasselbe Bild pro Page */
 function picsum(seed: string, w = 1200, h = 600) {
@@ -597,6 +598,7 @@ export default async function LPPage({ params }: { params: Promise<{ id: string 
 
   const sections = parseLandingPage(lp.landingpage ?? '');
   const hasStructure = sections.length > 1;
+  const copy = LANDING_COPY[contentLanguage(lp.language)];
 
   return (
     <div style={{ minHeight: '100dvh' }}>
@@ -668,9 +670,9 @@ export default async function LPPage({ params }: { params: Promise<{ id: string 
               }}
             >AI</div>
             <div>
-              <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)' }}>KI-generierte Landing Page</p>
+              <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)' }}>{copy.generatedPage}</p>
               <p style={{ fontSize: 12, color: 'var(--color-muted)' }}>
-                CMCx · {lp.tone} · {lp.language === 'de' ? 'Deutsch' : 'English'}
+                CMCx · {lp.tone} · {copy.languageLabel}
               </p>
             </div>
           </div>
@@ -678,7 +680,7 @@ export default async function LPPage({ params }: { params: Promise<{ id: string 
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M9 2L4 7l5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            Alle Pages
+            {copy.allPages}
           </a>
         </div>
       </div>

@@ -6,12 +6,9 @@ import Marquee from './components/ui/Marquee';
 import ScrollReveal from './components/ui/ScrollReveal';
 import StatsSection from './components/ui/StatsSection';
 import GallerySection from './components/ui/GallerySection';
+import { contentLanguage, formatLocalizedDate, LANDING_COPY, LANGUAGE_FLAGS } from '../lib/i18n';
 
 export const revalidate = 10;
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' });
-}
 
 /**
  * Extract the first `# ` heading from generated LP content.
@@ -63,6 +60,8 @@ function ToneBadge({ tone }: { tone: string }) {
 
 /* ── Featured Card ──────────────────────────────────────────── */
 function FeaturedCard({ lp }: { lp: LandingPage }) {
+  const language = contentLanguage(lp.language);
+  const copy = LANDING_COPY[language];
   return (
     <a href={`/lp/${lp.id}`} className="group block no-underline glow-border" style={{ borderRadius: 24 }}>
       <div className="featured-card relative overflow-hidden" style={{ borderRadius: 24 }}>
@@ -101,7 +100,7 @@ function FeaturedCard({ lp }: { lp: LandingPage }) {
             </span>
             <ToneBadge tone={lp.tone} />
             <span className="text-[11px]" style={{ color: 'var(--color-muted)' }}>
-              {lp.language === 'de' ? '🇩🇪' : '🇬🇧'} {formatDate(lp.created_at)}
+              {LANGUAGE_FLAGS[language]} {formatLocalizedDate(lp.created_at, lp.language)}
             </span>
           </div>
 
@@ -124,7 +123,7 @@ function FeaturedCard({ lp }: { lp: LandingPage }) {
           {/* CTA */}
           <div className="inline-flex">
             <span className="btn-primary">
-              Landing Page öffnen
+              {copy.openPage}
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path d="M8 3l5 5-5 5M3 8h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
@@ -138,6 +137,7 @@ function FeaturedCard({ lp }: { lp: LandingPage }) {
 
 /* ── Grid Card ──────────────────────────────────────────────── */
 function LPCard({ lp, index }: { lp: LandingPage; index: number }) {
+  const copy = LANDING_COPY[contentLanguage(lp.language)];
   return (
     <ScrollReveal delay={index * 60}>
       <a href={`/lp/${lp.id}`} className="group block no-underline card">
@@ -189,13 +189,13 @@ function LPCard({ lp, index }: { lp: LandingPage; index: number }) {
           </p>
           <div className="flex items-center justify-between">
             <time className="text-[11px]" style={{ color: 'rgba(161,161,170,0.5)' }}>
-              {formatDate(lp.created_at)}
+              {formatLocalizedDate(lp.created_at, lp.language)}
             </time>
             <span
               className="text-[12px] font-semibold flex items-center gap-1 group-hover:gap-2 transition-all"
               style={{ color: 'var(--color-accent2)' }}
             >
-              Öffnen
+              {copy.open}
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                 <path d="M2 6h8M6.5 3l3.5 3-3.5 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
